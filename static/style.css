@@ -1,0 +1,136 @@
+body {
+    margin: 0;
+    padding: 0;
+    font-family: 'Segoe UI', Arial, sans-serif;
+    color: #333;
+    background-image: url('/static/background.png'); /* Make sure bg.jpg is in static folder */
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+}
+
+/* Background Blur Layer */
+.background-image {
+    position: fixed;
+    top: 0; left: 0;
+    height: 100%;
+    width: 100%;
+    background-image: url('/static/background.png');
+    background-size: cover;
+    background-position: center;
+    filter: blur(5px);
+    z-index: -1;
+}
+
+/* Top Navigation Bar */
+.top-bar {
+    background: rgba(0, 0, 0, 0.7);
+    color: white;
+    padding: 10px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.logout-btn {
+    color: white;
+    text-decoration: none;
+    background-color: #e74c3c;
+    padding: 6px 12px;
+    border-radius: 5px;
+    transition: background 0.3s;
+}
+
+.logout-btn:hover {
+    background-color: #c0392b;
+}
+
+/* Form Container */
+.container {
+    max-width: 600px;
+    margin: 50px auto;
+    background: rgba(255, 255, 255, 0.95); /* semi-transparent */
+    padding: 30px;
+    border-radius: 15px;
+    box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+}
+
+/* Headings */
+h2 {
+    text-align: center;
+    color: #005f73;
+    margin-bottom: 20px;
+}
+
+/* Form Styling */
+form {
+    display: flex;
+    flex-direction: column;
+}
+
+label {
+    margin-top: 15px;
+    font-weight: bold;
+    font-size: 14px;
+}
+
+select,
+input[type="number"],
+input[type="submit"],
+input[type="text"],
+input[type="password"] {
+    margin-top: 5px;
+    padding: 10px;
+    font-size: 14px;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+}
+
+input[type="submit"] {
+    background-color: #008891;
+    color: white;
+    border: none;
+    margin-top: 25px;
+    cursor: pointer;
+    transition: background 0.3s ease;
+}
+
+input[type="submit"]:hover {
+    background-color: #005f73;
+}
+
+/* Prediction Result Styling */
+.result {
+    margin-top: 25px;
+    padding: 15px;
+    border-radius: 6px;
+    font-weight: bold;
+    text-align: center;
+}
+
+.success {
+    background-color: #c6f6d5;
+    color: #22543d;
+}
+
+.warning {
+    background-color: #fed7d7;
+    color: #742a2a;
+}
+
+/* Animation */
+.animated {
+    animation: fadeIn 0.8s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(-10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
