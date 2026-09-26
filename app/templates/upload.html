@@ -1,0 +1,201 @@
+{% extends "base.html" %}
+
+{% block title %}Bulk Ingestion & Dataset Validation | ChurnIntel AI{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1>Dataset Ingestion & Validation</h1>
+        <p class="subtitle">Upload customer records in CSV or Excel format to score churn risk and generate TreeSHAP feature attributions.</p>
+    </div>
+    <div class="header-actions">
+        <a href="{{ url_for('upload.download_sample_template') }}" class="btn btn-secondary">
+            <i class="fas fa-file-csv"></i> Download Template CSV
+        </a>
+    </div>
+</div>
+
+<div class="grid-2" style="gap: 20px;">
+    <!-- Left Column: Upload Dropzone -->
+    <div>
+        <div class="card">
+            <div class="card-header">
+                <h3><i class="fas fa-cloud-arrow-up" style="color: var(--primary);"></i> Ingestion Gateway</h3>
+                <span class="badge badge-neutral">CSV / XLSX / XLS</span>
+            </div>
+
+            <div class="dropzone" id="uploadDropzone" onclick="document.getElementById('fileInput').click()" style="padding: 36px 20px; text-align: center; border: 2px dashed var(--border-color); border-radius: var(--radius); background: var(--bg-neutral); cursor: pointer;">
+                <div style="width: 48px; height: 48px; border-radius: 50%; background: #EFF6FF; border: 1px solid #BFDBFE; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px auto; color: var(--primary); font-size: 1.4rem;">
+                    <i class="fas fa-file-excel"></i>
+                </div>
+                <h3 style="font-size: 1rem; font-weight: 700; color: var(--text-main); margin-bottom: 4px;">Drag & Drop Customer Dataset here</h3>
+                <p style="color: var(--text-muted); font-size: 0.82rem; margin-bottom: 14px;">Supports .csv, .xlsx, .xls up to 32MB</p>
+                <button type="button" class="btn btn-secondary btn-sm">
+                    <i class="fas fa-folder-open"></i> Browse Local Files
+                </button>
+                <input type="file" id="fileInput" style="display: none;" accept=".csv, .xlsx, .xls" onchange="handleFileSelected(this.files[0])">
+            </div>
+
+            <!-- Validation Progress Spinner -->
+            <div id="validationProgress" style="display: none; text-align: center; padding: 24px;">
+                <i class="fas fa-spinner fa-spin" style="font-size: 1.8rem; color: var(--primary); margin-bottom: 10px;"></i>
+                <h4 style="color: var(--text-main); font-size: 0.95rem; margin-bottom: 4px;">Validating Dataset Schema...</h4>
+                <p style="color: var(--text-muted); font-size: 0.82rem;">Checking canonical column mappings, value distributions, duplicates, and null values.</p>
+            </div>
+        </div>
+
+        <!-- Ingestion Schema Guide -->
+        <div class="card">
+            <div class="card-header">
+                <h3><i class="fas fa-info-circle" style="color: var(--primary);"></i> Required Feature Schema</h3>
+            </div>
+            <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 12px;">
+                The platform normalizes standard telecom subscriber feature schemas:
+            </p>
+            <div style="font-size: 0.82rem; color: var(--text-main); display: grid; grid-template-columns: 1fr 1fr; gap: 8px;">
+                <div>• <strong>customer_id</strong>: Unique account key</div>
+                <div>• <strong>tenure</strong>: Active subscription months</div>
+                <div>• <strong>monthly_charges</strong>: Monthly recurring fee</div>
+                <div>• <strong>total_charges</strong>: Cumulative lifetime spend</div>
+                <div>• <strong>contract</strong>: Month-to-month, 1-Yr, 2-Yr</div>
+                <div>• <strong>payment_method</strong>: Electronic / Card / Check</div>
+                <div>• <strong>internet_service</strong>: Fiber optic / DSL / No</div>
+                <div>• <strong>tech_support</strong>: Yes / No</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Right Column: Validation Report Card -->
+    <div>
+        <div class="card" id="reportCard" style="display: none;">
+            <div class="card-header">
+                <h3><i class="fas fa-clipboard-check" style="color: var(--primary);"></i> Validation Summary</h3>
+                <span id="reportStatusBadge" class="badge"></span>
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 16px; text-align: center;">
+                <div style="background: var(--bg-neutral); padding: 12px; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+                    <div style="font-size: 1.3rem; font-weight: 800; color: var(--text-main);" id="repTotal">0</div>
+                    <div style="font-size: 0.72rem; color: var(--text-muted); font-weight: 600; text-transform: uppercase;">Total Rows</div>
+                </div>
+                <div style="background: var(--success-light); border: 1px solid #A7F3D0; padding: 12px; border-radius: var(--radius-sm);">
+                    <div style="font-size: 1.3rem; font-weight: 800; color: var(--success);" id="repValid">0</div>
+                    <div style="font-size: 0.72rem; color: var(--success); font-weight: 600; text-transform: uppercase;">Valid Records</div>
+                </div>
+                <div style="background: var(--danger-light); border: 1px solid #FECACA; padding: 12px; border-radius: var(--radius-sm);">
+                    <div style="font-size: 1.3rem; font-weight: 800; color: var(--danger);" id="repInvalid">0</div>
+                    <div style="font-size: 0.72rem; color: var(--danger); font-weight: 600; text-transform: uppercase;">Invalid Rows</div>
+                </div>
+            </div>
+
+            <div style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 16px; display: flex; flex-direction: column; gap: 4px;">
+                <div id="repDuplicates">• Duplicate IDs detected: <strong style="color: var(--text-main);">0</strong></div>
+                <div id="repMissing">• Missing values imputed: <strong style="color: var(--text-main);">0</strong></div>
+            </div>
+
+            <!-- Import Action Form -->
+            <form method="POST" action="{{ url_for('upload.import_valid_records') }}">
+                <input type="hidden" name="company_id" value="{{ current_company.company_id if current_company else 'APEX-GLOBAL' }}">
+                <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; padding: 12px;" id="btnImport">
+                    <i class="fas fa-database"></i> Import Records & Generate Predictions
+                </button>
+            </form>
+        </div>
+
+        <!-- Initial Placeholder State -->
+        <div class="card" id="initialPlaceholder">
+            <div style="text-align: center; padding: 48px 24px;">
+                <div style="width: 48px; height: 48px; border-radius: 50%; background: var(--bg-neutral); border: 1px solid var(--border-color); display: flex; align-items: center; justify-content: center; margin: 0 auto 12px auto; color: var(--text-muted); font-size: 1.25rem;">
+                    <i class="fas fa-file-circle-check"></i>
+                </div>
+                <h3 style="color: var(--text-main); font-size: 1rem; margin-bottom: 4px;">No File Selected</h3>
+                <p style="font-size: 0.82rem; color: var(--text-muted); max-width: 360px; margin: 0 auto; line-height: 1.5;">
+                    Upload a CSV or Excel file to review the automated data health and schema validation summary prior to database ingestion.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    const dropzone = document.getElementById('uploadDropzone');
+
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        dropzone.addEventListener(eventName, preventDefaults, false);
+    });
+
+    function preventDefaults(e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+
+    ['dragenter', 'dragover'].forEach(eventName => {
+        dropzone.addEventListener(eventName, () => {
+            dropzone.style.borderColor = 'var(--primary)';
+            dropzone.style.background = '#EFF6FF';
+        }, false);
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+        dropzone.addEventListener(eventName, () => {
+            dropzone.style.borderColor = 'var(--border-color)';
+            dropzone.style.background = 'var(--bg-neutral)';
+        }, false);
+    });
+
+    dropzone.addEventListener('drop', (e) => {
+        const dt = e.dataTransfer;
+        const files = dt.files;
+        if (files.length) handleFileSelected(files[0]);
+    });
+
+    async function handleFileSelected(file) {
+        if (!file) return;
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('company_id', '{{ current_company.company_id if current_company else "APEX-GLOBAL" }}');
+
+        document.getElementById('validationProgress').style.display = 'block';
+        document.getElementById('initialPlaceholder').style.display = 'none';
+        document.getElementById('reportCard').style.display = 'none';
+
+        try {
+            const resp = await fetch("{{ url_for('upload.validate_upload') }}", {
+                method: 'POST',
+                body: formData
+            });
+            const data = await resp.json();
+            document.getElementById('validationProgress').style.display = 'none';
+
+            if (data.success) {
+                const rep = data.report;
+                document.getElementById('reportCard').style.display = 'block';
+                document.getElementById('repTotal').innerText = rep.total_rows.toLocaleString();
+                document.getElementById('repValid').innerText = rep.valid_rows_count.toLocaleString();
+                document.getElementById('repInvalid').innerText = rep.invalid_rows_count.toLocaleString();
+                document.getElementById('repDuplicates').innerHTML = `• Duplicate IDs detected: <strong style="color: var(--text-main);">${rep.duplicate_ids_count}</strong>`;
+                document.getElementById('repMissing').innerHTML = `• Imputed missing values: <strong style="color: var(--text-main);">${rep.missing_values_count}</strong>`;
+
+                const badge = document.getElementById('reportStatusBadge');
+                if (rep.is_valid_for_import) {
+                    badge.className = 'badge badge-low';
+                    badge.innerHTML = '<span class="badge-dot"></span> Validated & Ready';
+                    document.getElementById('btnImport').disabled = false;
+                } else {
+                    badge.className = 'badge badge-high';
+                    badge.innerHTML = '<span class="badge-dot"></span> Validation Failed';
+                    document.getElementById('btnImport').disabled = true;
+                }
+            } else {
+                alert("Validation error: " + data.error);
+                document.getElementById('initialPlaceholder').style.display = 'block';
+            }
+        } catch (err) {
+            document.getElementById('validationProgress').style.display = 'none';
+            alert("Error validating file: " + err);
+        }
+    }
+</script>
+{% endblock %}

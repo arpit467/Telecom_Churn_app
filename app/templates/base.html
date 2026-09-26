@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}ChurnIntel AI — Telecom Customer Retention Analytics{% endblock %}</title>
+    <!-- Prevent FOUC: Apply Theme Immediately -->
+    <script>
+        (function() {
+            const savedTheme = localStorage.getItem('churnintel_theme') || 'light';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+        })();
+    </script>
+    <!-- Google Fonts Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome 6 Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Enterprise Design System -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+
+    <!-- Enterprise Top Navigation Bar -->
+    <nav class="navbar">
+        <div class="nav-left">
+            <a href="{{ url_for('dashboard.index') }}" class="nav-brand">
+                <div class="brand-icon">
+                    <i class="fas fa-tower-broadcast"></i>
+                </div>
+                <div class="brand-text">
+                    <span class="brand-title">ChurnIntel <span class="brand-badge">AI</span></span>
+                    <span class="brand-sub">Telecom Retention Analytics</span>
+                </div>
+            </a>
+
+            <!-- Active Dataset Status Indicator -->
+            {% if session.get('has_active_data') %}
+            <div class="dataset-status-pill">
+                <i class="fas fa-database" style="color: var(--primary); font-size: 0.8rem;"></i>
+                <span class="ds-name">{{ session.get('dataset_name', 'Active Dataset') }}</span>
+                <a href="{{ url_for('upload.reset_workspace') }}" title="Clear dataset and switch" style="color: var(--text-muted); margin-left: 2px;" onmouseover="this.style.color='#DC2626'" onmouseout="this.style.color='var(--text-muted)'">
+                    <i class="fas fa-xmark"></i>
+                </a>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="nav-links">
+            <a href="{{ url_for('dashboard.index') }}" class="nav-link {% if request.endpoint == 'dashboard.index' %}active{% endif %}">
+                <i class="fas fa-chart-pie"></i> <span>Dashboard</span>
+            </a>
+            <a href="{{ url_for('customers.customer_list') }}" class="nav-link {% if 'customers' in request.endpoint %}active{% endif %}">
+                <i class="fas fa-users"></i> <span>Customers</span>
+            </a>
+            <a href="{{ url_for('assistant.assistant_page') }}" class="nav-link {% if 'assistant' in request.endpoint %}active{% endif %}">
+                <i class="fas fa-message"></i> <span>AI Assistant</span>
+            </a>
+            <a href="{{ url_for('manual_predict.manual_prediction_page') }}" class="nav-link {% if 'manual' in request.endpoint %}active{% endif %}">
+                <i class="fas fa-sliders"></i> <span>Simulator</span>
+            </a>
+            <a href="{{ url_for('dashboard.model_benchmarking') }}" class="nav-link {% if 'model' in request.endpoint %}active{% endif %}">
+                <i class="fas fa-chart-line"></i> <span>ML Models</span>
+            </a>
+            
+            {% if session.get('has_active_data') %}
+            <a href="{{ url_for('upload.upload_page') }}" class="btn btn-secondary btn-sm" style="margin-left: 4px;">
+                <i class="fas fa-file-import"></i> <span>Upload New Data</span>
+            </a>
+            {% else %}
+            <a href="{{ url_for('upload.upload_page') }}" class="btn btn-primary btn-sm" style="margin-left: 4px;">
+                <i class="fas fa-file-import"></i> <span>Upload Dataset</span>
+            </a>
+            {% endif %}
+
+            <!-- Theme Toggle Button (Light / Dark) -->
+            <button id="themeToggleBtn" class="theme-toggle-btn" onclick="toggleTheme()" title="Switch Light / Dark Theme" style="margin-left: 6px;">
+                <i id="themeIcon" class="fas fa-moon"></i>
+            </button>
+        </div>
+    </nav>
+
+    <!-- Flash Messages Container -->
+    <div class="flash-container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                <div class="alert alert-{{ category }}">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <i class="fas {% if category == 'success' %}fa-circle-check{% elif category == 'warning' %}fa-triangle-exclamation{% else %}fa-circle-info{% endif %}"></i>
+                        <span>{{ message }}</span>
+                    </div>
+                    <button class="alert-close" onclick="this.parentElement.remove()">&times;</button>
+                </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+    </div>
+
+    <!-- Main Content Area -->
+    <main class="main-content">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Professional Footer -->
+    <footer class="footer">
+        <div class="footer-content">
+            <span>© 2026 <strong>ChurnIntel AI Platform</strong> — Telecom Customer Churn & Retention Analytics</span>
+            <div class="footer-tags">
+                <span class="tag">Stacking Ensemble (83.1% AUC)</span>
+                <span class="tag">TreeSHAP Attributions</span>
+                <span class="tag">Counterfactual Simulation</span>
+                <span class="tag">Data-Driven 48% Threshold</span>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Global Theme Toggle Script -->
+    <script>
+        function updateThemeIcon(theme) {
+            const icon = document.getElementById('themeIcon');
+            const btn = document.getElementById('themeToggleBtn');
+            if (!icon || !btn) return;
+            if (theme === 'dark') {
+                icon.className = 'fas fa-sun';
+                btn.title = 'Switch to Light Theme';
+            } else {
+                icon.className = 'fas fa-moon';
+                btn.title = 'Switch to Dark Theme';
+            }
+        }
+
+        function toggleTheme() {
+            const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+            const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+            document.documentElement.setAttribute('data-theme', newTheme);
+            localStorage.setItem('churnintel_theme', newTheme);
+            updateThemeIcon(newTheme);
+            window.dispatchEvent(new CustomEvent('themeChanged', { detail: { theme: newTheme } }));
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const currentTheme = document.documentElement.getAttribute('data-theme') || 'light';
+            updateThemeIcon(currentTheme);
+        });
+    </script>
+
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>

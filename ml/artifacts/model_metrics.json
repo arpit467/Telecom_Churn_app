@@ -1,0 +1,199 @@
+{
+  "models": [
+    {
+      "model_name": "Champion Ensemble",
+      "accuracy": 0.7489,
+      "precision": 0.6432,
+      "recall": 0.7631,
+      "f1_score": 0.698,
+      "roc_auc": 0.831,
+      "pr_auc": 0.7424,
+      "brier_score": 0.1659,
+      "confusion_matrix": [
+        [
+          1197,
+          420
+        ],
+        [
+          235,
+          757
+        ]
+      ],
+      "optimal_threshold": 0.48
+    },
+    {
+      "model_name": "CatBoost",
+      "accuracy": 0.7359,
+      "precision": 0.6168,
+      "recall": 0.8065,
+      "f1_score": 0.699,
+      "roc_auc": 0.8312,
+      "pr_auc": 0.7421,
+      "brier_score": 0.168,
+      "confusion_matrix": [
+        [
+          1120,
+          497
+        ],
+        [
+          192,
+          800
+        ]
+      ],
+      "optimal_threshold": 0.45
+    },
+    {
+      "model_name": "XGBoost",
+      "accuracy": 0.7432,
+      "precision": 0.6328,
+      "recall": 0.7732,
+      "f1_score": 0.696,
+      "roc_auc": 0.8304,
+      "pr_auc": 0.741,
+      "brier_score": 0.1685,
+      "confusion_matrix": [
+        [
+          1172,
+          445
+        ],
+        [
+          225,
+          767
+        ]
+      ],
+      "optimal_threshold": 0.49
+    },
+    {
+      "model_name": "Gradient Boosting",
+      "accuracy": 0.7233,
+      "precision": 0.5968,
+      "recall": 0.8387,
+      "f1_score": 0.6974,
+      "roc_auc": 0.8283,
+      "pr_auc": 0.7332,
+      "brier_score": 0.1632,
+      "confusion_matrix": [
+        [
+          1055,
+          562
+        ],
+        [
+          160,
+          832
+        ]
+      ],
+      "optimal_threshold": 0.31
+    },
+    {
+      "model_name": "Random Forest",
+      "accuracy": 0.7256,
+      "precision": 0.6024,
+      "recall": 0.8185,
+      "f1_score": 0.694,
+      "roc_auc": 0.8237,
+      "pr_auc": 0.733,
+      "brier_score": 0.1684,
+      "confusion_matrix": [
+        [
+          1081,
+          536
+        ],
+        [
+          180,
+          812
+        ]
+      ],
+      "optimal_threshold": 0.41
+    },
+    {
+      "model_name": "Logistic Regression (Baseline)",
+      "accuracy": 0.7298,
+      "precision": 0.6117,
+      "recall": 0.7923,
+      "f1_score": 0.6904,
+      "roc_auc": 0.8192,
+      "pr_auc": 0.7175,
+      "brier_score": 0.1748,
+      "confusion_matrix": [
+        [
+          1118,
+          499
+        ],
+        [
+          206,
+          786
+        ]
+      ],
+      "optimal_threshold": 0.48
+    }
+  ],
+  "feature_importances": [
+    {
+      "feature": "HighRiskProfileScore",
+      "importance": 0.1846
+    },
+    {
+      "feature": "MonthlyCharges",
+      "importance": 0.1088
+    },
+    {
+      "feature": "MonthlyCharges_to_Tenure",
+      "importance": 0.085
+    },
+    {
+      "feature": "Is_TwoYear",
+      "importance": 0.0773
+    },
+    {
+      "feature": "Is_MonthToMonth",
+      "importance": 0.0497
+    },
+    {
+      "feature": "ChargeDiscrepancy",
+      "importance": 0.0438
+    },
+    {
+      "feature": "TotalCharges",
+      "importance": 0.0414
+    },
+    {
+      "feature": "tenure",
+      "importance": 0.0389
+    },
+    {
+      "feature": "ActiveServicesCount",
+      "importance": 0.035
+    },
+    {
+      "feature": "Is_OneYear",
+      "importance": 0.0333
+    },
+    {
+      "feature": "OnlineSecurity_Yes",
+      "importance": 0.0256
+    },
+    {
+      "feature": "PhoneService",
+      "importance": 0.0232
+    }
+  ],
+  "dataset_stats": {
+    "IBM Telco Primary": {
+      "total_rows": 7043,
+      "churn_count": 1869,
+      "churn_rate": 26.54
+    },
+    "Suburban / Regional Cohort": {
+      "total_rows": 3500,
+      "churn_count": 1999,
+      "churn_rate": 57.11
+    },
+    "Digital & Streaming Cohort": {
+      "total_rows": 2500,
+      "churn_count": 1089,
+      "churn_rate": 43.56
+    }
+  },
+  "total_training_records": 13043,
+  "test_records": 2609
+}

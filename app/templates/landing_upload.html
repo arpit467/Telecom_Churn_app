@@ -1,0 +1,268 @@
+{% extends "base.html" %}
+
+{% block title %}Upload Customer Dataset | ChurnIntel AI{% endblock %}
+
+{% block content %}
+<div style="max-width: 1100px; margin: 0 auto; padding: 10px 0 40px 0;">
+
+    <!-- Header Section -->
+    <div style="margin-bottom: 28px; text-align: center;">
+        <h1 style="font-size: 1.85rem; font-weight: 800; margin-bottom: 8px;">Upload Customer Dataset</h1>
+        <p class="subtitle" style="font-size: 0.95rem; max-width: 680px; margin: 0 auto;">
+            Import customer subscriber records to generate calibrated churn predictions, TreeSHAP feature attributions, and retention intelligence.
+        </p>
+    </div>
+
+    <!-- 4-Step Pipeline Indicator -->
+    <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 28px;">
+        <div style="background: var(--card-bg); border: 1px solid var(--border-color); border-radius: var(--radius); padding: 14px 16px; display: flex; align-items: center; gap: 12px;">
+            <div style="width: 32px; height: 32px; border-radius: 50%; background: #EFF6FF; color: var(--primary); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.85rem; flex-shrink: 0;">1</div>
+            <div>
+                <div style="font-size: 0.82rem; font-weight: 700; color: var(--text-main);">Upload</div>
+                <div style="font-size: 0.75rem; color: var(--text-muted);">CSV, XLSX, or XLS</div>
+            </div>
+        </div>
+
+        <div style="background: var(--card-bg); border: 1px solid var(--border-color); border-radius: var(--radius); padding: 14px 16px; display: flex; align-items: center; gap: 12px;">
+            <div style="width: 32px; height: 32px; border-radius: 50%; background: #EFF6FF; color: var(--primary); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.85rem; flex-shrink: 0;">2</div>
+            <div>
+                <div style="font-size: 0.82rem; font-weight: 700; color: var(--text-main);">Validate</div>
+                <div style="font-size: 0.75rem; color: var(--text-muted);">Schema & integrity check</div>
+            </div>
+        </div>
+
+        <div style="background: var(--card-bg); border: 1px solid var(--border-color); border-radius: var(--radius); padding: 14px 16px; display: flex; align-items: center; gap: 12px;">
+            <div style="width: 32px; height: 32px; border-radius: 50%; background: #EFF6FF; color: var(--primary); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.85rem; flex-shrink: 0;">3</div>
+            <div>
+                <div style="font-size: 0.82rem; font-weight: 700; color: var(--text-main);">Score Risk</div>
+                <div style="font-size: 0.75rem; color: var(--text-muted);">Ensemble inference</div>
+            </div>
+        </div>
+
+        <div style="background: var(--card-bg); border: 1px solid var(--border-color); border-radius: var(--radius); padding: 14px 16px; display: flex; align-items: center; gap: 12px;">
+            <div style="width: 32px; height: 32px; border-radius: 50%; background: #EFF6FF; color: var(--primary); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.85rem; flex-shrink: 0;">4</div>
+            <div>
+                <div style="font-size: 0.82rem; font-weight: 700; color: var(--text-main);">Action Insights</div>
+                <div style="font-size: 0.75rem; color: var(--text-muted);">SHAP & retention plans</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Ingestion Area: 2-Column Grid -->
+    <div style="display: grid; grid-template-columns: 1.4fr 1fr; gap: 24px; align-items: stretch; margin-bottom: 36px;">
+        
+        <!-- Left: Upload Dataset Card -->
+        <div class="card" style="margin-bottom: 0; display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+                <div class="card-header" style="margin-bottom: 16px;">
+                    <h3><i class="fas fa-file-arrow-up" style="color: var(--primary);"></i> Ingest Customer Dataset</h3>
+                    <span class="badge badge-neutral">CSV / XLSX / XLS</span>
+                </div>
+
+                <!-- Drag & Drop Zone -->
+                <div id="dropZone" style="border: 2px dashed var(--border-color); border-radius: var(--radius); padding: 36px 20px; text-align: center; background: var(--bg-neutral); cursor: pointer; transition: var(--transition); margin-bottom: 16px;" onclick="document.getElementById('fileInput').click()">
+                    <input type="file" id="fileInput" accept=".csv, .xlsx, .xls" style="display: none;" onchange="handleFileSelected(this.files[0])">
+                    <div style="width: 52px; height: 52px; border-radius: 50%; background: #EFF6FF; border: 1px solid #BFDBFE; display: flex; align-items: center; justify-content: center; margin: 0 auto 12px auto; color: var(--primary); font-size: 1.5rem;">
+                        <i class="fas fa-cloud-arrow-up"></i>
+                    </div>
+                    <h3 style="font-size: 1.05rem; font-weight: 700; color: var(--text-main); margin-bottom: 4px;" id="dropTitle">
+                        Drag & drop dataset here, or <span style="color: var(--primary); text-decoration: underline;">browse files</span>
+                    </h3>
+                    <p style="font-size: 0.82rem; color: var(--text-muted);" id="dropSub">
+                        Supported formats: CSV, XLSX, XLS (Maximum 32MB)
+                    </p>
+                </div>
+
+                <!-- Live Validation Preview Area -->
+                <div id="validationBox" style="display: none; background: var(--success-light); border: 1px solid #A7F3D0; border-radius: var(--radius); padding: 16px; margin-bottom: 16px;">
+                    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+                        <div style="display: flex; align-items: center; gap: 8px; color: var(--success); font-weight: 700; font-size: 0.9rem;">
+                            <i class="fas fa-check-circle"></i>
+                            <span id="validFileName">dataset.csv</span>
+                        </div>
+                        <span class="badge badge-low" id="validRowCount">0 Valid Records</span>
+                    </div>
+                    
+                    <form id="importForm" action="{{ url_for('upload.import_valid_records') }}" method="POST">
+                        <input type="hidden" name="cache_token" id="cacheTokenInput">
+                        <div class="form-group" style="margin-bottom: 12px;">
+                            <label class="form-label">Dataset / Workspace Name</label>
+                            <input type="text" name="dataset_name" id="datasetNameInput" class="form-control" placeholder="e.g. Q3 Telecom Retention Validation">
+                        </div>
+                        <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; padding: 10px; font-size: 0.9rem;">
+                            <i class="fas fa-database"></i> Import Records & Generate Predictions
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Error Box -->
+                <div id="errorBox" style="display: none; background: var(--danger-light); border: 1px solid #FECACA; border-radius: var(--radius); padding: 14px; margin-bottom: 16px; color: var(--danger); font-size: 0.85rem;">
+                    <div style="display: flex; align-items: center; gap: 6px; font-weight: 700; margin-bottom: 4px;">
+                        <i class="fas fa-exclamation-circle"></i> Validation Issue Detected
+                    </div>
+                    <div id="errorMessage"></div>
+                </div>
+            </div>
+
+            <!-- Download Sample Template helper -->
+            <div style="border-top: 1px solid var(--border-color); padding-top: 14px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+                <span style="font-size: 0.82rem; color: var(--text-muted);">
+                    Need the standard schema format?
+                </span>
+                <a href="{{ url_for('upload.download_sample_template') }}" class="btn btn-secondary btn-sm">
+                    <i class="fas fa-file-csv"></i> Download Template CSV
+                </a>
+            </div>
+        </div>
+
+        <!-- Right: Demo Dataset Card -->
+        <div class="card" style="margin-bottom: 0; display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+                <div class="card-header" style="margin-bottom: 14px;">
+                    <h3><i class="fas fa-database" style="color: var(--primary);"></i> Demo Dataset</h3>
+                    <span class="badge badge-neutral">Pre-Configured</span>
+                </div>
+                <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 16px;">
+                    Explore the complete platform with a pre-validated dataset of <strong>150 customer accounts</strong>, including calibrated risk scores, TreeSHAP attributions, and AI Assistant integration.
+                </p>
+                <div style="display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; font-size: 0.82rem; color: var(--text-main);">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <i class="fas fa-check" style="color: var(--success);"></i> 150 diverse subscriber profiles and billing plans
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <i class="fas fa-check" style="color: var(--success);"></i> Stacking ensemble & CatBoost model predictions
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <i class="fas fa-check" style="color: var(--success);"></i> TreeSHAP feature attributions for all accounts
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <i class="fas fa-check" style="color: var(--success);"></i> Interactive retention strategy and scenario testing
+                    </div>
+                </div>
+            </div>
+
+            <a href="{{ url_for('upload.load_sample_dataset') }}" class="btn btn-secondary" style="width: 100%; justify-content: center; padding: 10px; font-size: 0.9rem;">
+                <i class="fas fa-play"></i> Load Demo Dataset
+            </a>
+        </div>
+    </div>
+
+    <!-- Schema Mapping Summary -->
+    <div class="card">
+        <div class="card-header">
+            <h3><i class="fas fa-table-columns" style="color: var(--primary);"></i> Canonical Data Schema</h3>
+            <span class="badge badge-neutral">Automatic Mapping</span>
+        </div>
+        <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 14px;">
+            The platform automatically normalizes common column naming conventions into the standardized feature pipeline:
+        </p>
+        <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; font-size: 0.8rem;">
+            <div style="background: var(--bg-neutral); padding: 8px 12px; border-radius: 4px; border: 1px solid var(--border-color);">
+                <strong>customer_id</strong><br><span style="color: var(--text-muted); font-size: 0.75rem;">Account identifier</span>
+            </div>
+            <div style="background: var(--bg-neutral); padding: 8px 12px; border-radius: 4px; border: 1px solid var(--border-color);">
+                <strong>tenure</strong><br><span style="color: var(--text-muted); font-size: 0.75rem;">Months active</span>
+            </div>
+            <div style="background: var(--bg-neutral); padding: 8px 12px; border-radius: 4px; border: 1px solid var(--border-color);">
+                <strong>monthly_charges</strong><br><span style="color: var(--text-muted); font-size: 0.75rem;">Monthly bill ($)</span>
+            </div>
+            <div style="background: var(--bg-neutral); padding: 8px 12px; border-radius: 4px; border: 1px solid var(--border-color);">
+                <strong>total_charges</strong><br><span style="color: var(--text-muted); font-size: 0.75rem;">Lifetime spend ($)</span>
+            </div>
+            <div style="background: var(--bg-neutral); padding: 8px 12px; border-radius: 4px; border: 1px solid var(--border-color);">
+                <strong>contract</strong><br><span style="color: var(--text-muted); font-size: 0.75rem;">Month-to-month / Annual</span>
+            </div>
+            <div style="background: var(--bg-neutral); padding: 8px 12px; border-radius: 4px; border: 1px solid var(--border-color);">
+                <strong>payment_method</strong><br><span style="color: var(--text-muted); font-size: 0.75rem;">Payment channel</span>
+            </div>
+            <div style="background: var(--bg-neutral); padding: 8px 12px; border-radius: 4px; border: 1px solid var(--border-color);">
+                <strong>internet_service</strong><br><span style="color: var(--text-muted); font-size: 0.75rem;">Fiber / DSL / No</span>
+            </div>
+            <div style="background: var(--bg-neutral); padding: 8px 12px; border-radius: 4px; border: 1px solid var(--border-color);">
+                <strong>tech_support</strong><br><span style="color: var(--text-muted); font-size: 0.75rem;">Yes / No</span>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    const dropZone = document.getElementById('dropZone');
+
+    ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, preventDefaults, false);
+    });
+
+    function preventDefaults(e) {
+        e.preventDefault();
+        e.stopPropagation();
+    }
+
+    ['dragenter', 'dragover'].forEach(eventName => {
+        dropZone.addEventListener(eventName, () => {
+            dropZone.style.borderColor = 'var(--primary)';
+            dropZone.style.background = '#EFF6FF';
+        }, false);
+    });
+
+    ['dragleave', 'drop'].forEach(eventName => {
+        dropZone.addEventListener(eventName, () => {
+            dropZone.style.borderColor = 'var(--border-color)';
+            dropZone.style.background = 'var(--bg-neutral)';
+        }, false);
+    });
+
+    dropZone.addEventListener('drop', (e) => {
+        const dt = e.dataTransfer;
+        const file = dt.files[0];
+        if (file) handleFileSelected(file);
+    });
+
+    async function handleFileSelected(file) {
+        if (!file) return;
+
+        const dropTitle = document.getElementById('dropTitle');
+        const dropSub = document.getElementById('dropSub');
+        const validationBox = document.getElementById('validationBox');
+        const errorBox = document.getElementById('errorBox');
+
+        dropTitle.innerHTML = `<i class="fas fa-spinner fa-spin"></i> Validating ${file.name}...`;
+        dropSub.innerText = "Checking schema integrity, missing values, and column mappings...";
+        errorBox.style.display = 'none';
+
+        const formData = new FormData();
+        formData.append('file', file);
+
+        try {
+            const resp = await fetch("{{ url_for('upload.validate_upload') }}", {
+                method: 'POST',
+                body: formData
+            });
+            const data = await resp.json();
+
+            if (data.success && data.report.is_valid_for_import) {
+                dropTitle.innerHTML = `<i class="fas fa-check-circle" style="color: var(--success);"></i> ${file.name}`;
+                dropSub.innerText = `File validated: ${data.report.valid_rows_count.toLocaleString()} valid subscriber records ready for import.`;
+
+                document.getElementById('validFileName').innerText = file.name;
+                document.getElementById('validRowCount').innerText = `${data.report.valid_rows_count.toLocaleString()} Valid Records`;
+                document.getElementById('cacheTokenInput').value = data.report.cache_token;
+                document.getElementById('datasetNameInput').value = file.name.replace(/\.[^/.]+$/, "");
+
+                validationBox.style.display = 'block';
+                validationBox.scrollIntoView({ behavior: 'smooth' });
+            } else {
+                dropTitle.innerHTML = `Drag & drop dataset here, or <span style="color: var(--primary); text-decoration: underline;">browse files</span>`;
+                dropSub.innerText = "Supports CSV, XLSX, XLS.";
+                errorBox.style.display = 'block';
+                document.getElementById('errorMessage').innerText = data.error || (data.report && data.report.error) || "Validation failed.";
+            }
+        } catch (err) {
+            dropTitle.innerHTML = `Drag & drop dataset here, or <span style="color: var(--primary); text-decoration: underline;">browse files</span>`;
+            errorBox.style.display = 'block';
+            document.getElementById('errorMessage').innerText = "Network error: " + err;
+        }
+    }
+</script>
+{% endblock %}

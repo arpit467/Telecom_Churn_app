@@ -1,0 +1,230 @@
+{% extends "base.html" %}
+
+{% block title %}Customer Churn Overview — ChurnIntel AI{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="page-header">
+    <div class="page-title">
+        <h1>Customer Churn Overview</h1>
+        <p>Monitor churn risk, customer exposure, and retention opportunities across <strong>{{ dataset_name }}</strong> ({{ "{:,}".format(total_customers) }} accounts analyzed).</p>
+    </div>
+    <div class="header-actions">
+        <a href="{{ url_for('assistant.assistant_page') }}" class="btn btn-secondary">
+            <i class="fas fa-message"></i> Ask AI Assistant
+        </a>
+        <a href="{{ url_for('upload.upload_page') }}" class="btn btn-primary">
+            <i class="fas fa-file-import"></i> Upload New Data
+        </a>
+    </div>
+</div>
+
+<!-- KPI Summary Metrics Row -->
+<div class="kpi-grid" style="grid-template-columns: repeat(5, 1fr);">
+    <!-- 1. Total Customers -->
+    <div class="kpi-card">
+        <div class="kpi-icon blue">
+            <i class="fas fa-users"></i>
+        </div>
+        <div class="kpi-data">
+            <span class="kpi-label">Total Accounts</span>
+            <h3>{{ "{:,}".format(total_customers) }}</h3>
+            <p>Monitored Subscribers</p>
+        </div>
+    </div>
+
+    <!-- 2. High Risk -->
+    <div class="kpi-card">
+        <div class="kpi-icon red">
+            <i class="fas fa-triangle-exclamation"></i>
+        </div>
+        <div class="kpi-data">
+            <span class="kpi-label">High Risk (&ge;48%)</span>
+            <h3 style="color: var(--risk-high-text);">{{ "{:,}".format(high_risk_count) }}</h3>
+            <p>{{ "%.1f"|format((high_risk_count/total_customers*100) if total_customers else 0) }}% of customer base</p>
+        </div>
+    </div>
+
+    <!-- 3. Medium Risk -->
+    <div class="kpi-card">
+        <div class="kpi-icon amber">
+            <i class="fas fa-shield-halved"></i>
+        </div>
+        <div class="kpi-data">
+            <span class="kpi-label">Medium Risk (30-48%)</span>
+            <h3 style="color: var(--risk-med-text);">{{ "{:,}".format(medium_risk_count) }}</h3>
+            <p>{{ "%.1f"|format((medium_risk_count/total_customers*100) if total_customers else 0) }}% of customer base</p>
+        </div>
+    </div>
+
+    <!-- 4. Low Risk -->
+    <div class="kpi-card">
+        <div class="kpi-icon green">
+            <i class="fas fa-circle-check"></i>
+        </div>
+        <div class="kpi-data">
+            <span class="kpi-label">Low Risk (&lt;30%)</span>
+            <h3 style="color: var(--risk-low-text);">{{ "{:,}".format(low_risk_count) }}</h3>
+            <p>{{ "%.1f"|format((low_risk_count/total_customers*100) if total_customers else 0) }}% of customer base</p>
+        </div>
+    </div>
+
+    <!-- 5. Monthly Revenue Exposure -->
+    <div class="kpi-card">
+        <div class="kpi-icon purple">
+            <i class="fas fa-sack-dollar"></i>
+        </div>
+        <div class="kpi-data">
+            <span class="kpi-label">Monthly Exposure</span>
+            <h3>${{ "{:,.0f}".format(monthly_rev_at_risk) }}</h3>
+            <p>${{ "{:,.0f}".format(monthly_rev_at_risk * 12) }}/year annualized</p>
+        </div>
+    </div>
+</div>
+
+<!-- Main 2-Column Analytics Grid -->
+<div class="grid-2">
+    <!-- Risk Distribution Chart Card -->
+    <div class="glass-card">
+        <div class="card-header">
+            <h3><i class="fas fa-chart-pie" style="color: var(--primary);"></i> Churn Risk Distribution</h3>
+            <span class="badge badge-neutral">{{ dataset_name }}</span>
+        </div>
+        <div style="height: 250px; position: relative;">
+            <canvas id="riskDonutChart"></canvas>
+        </div>
+        <div style="display: flex; justify-content: space-around; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--border-subtle); font-size: 0.82rem;">
+            <div><span style="color: var(--risk-high-text); font-weight: 600;">● High Risk</span>: {{ high_risk_count }} ({{ "%.1f"|format((high_risk_count/total_customers*100) if total_customers else 0) }}%)</div>
+            <div><span style="color: var(--risk-med-text); font-weight: 600;">● Medium Risk</span>: {{ medium_risk_count }} ({{ "%.1f"|format((medium_risk_count/total_customers*100) if total_customers else 0) }}%)</div>
+            <div><span style="color: var(--risk-low-text); font-weight: 600;">● Low Risk</span>: {{ low_risk_count }} ({{ "%.1f"|format((low_risk_count/total_customers*100) if total_customers else 0) }}%)</div>
+        </div>
+    </div>
+
+    <!-- Top Dataset Churn Drivers (TreeSHAP) -->
+    <div class="glass-card">
+        <div class="card-header">
+            <h3><i class="fas fa-ranking-star" style="color: var(--primary);"></i> Top Churn Drivers</h3>
+            <a href="{{ url_for('dashboard.model_benchmarking') }}" class="btn btn-outline btn-sm">Model Details</a>
+        </div>
+        <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 14px;">
+            Key risk factors driving customer churn identified by TreeSHAP feature attribution:
+        </p>
+
+        <div class="shap-list">
+            {% for d in global_drivers %}
+            <div class="shap-item">
+                <div class="shap-header">
+                    <span style="font-weight: 600; color: var(--text-main);">{{ d.feature }}</span>
+                    <span style="font-weight: 600; color: var(--text-muted);">{{ d.importance }}% impact</span>
+                </div>
+                <div class="shap-track">
+                    <div class="shap-fill increase" style="width: {{ [d.importance * 3.2, 100]|min }}%;"></div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- High-Risk Customer Priority Queue Table -->
+<div class="glass-card">
+    <div class="card-header">
+        <h3><i class="fas fa-triangle-exclamation" style="color: var(--risk-high-text);"></i> High-Risk Customer Priority Queue</h3>
+        <a href="{{ url_for('customers.customer_list', risk='HIGH') }}" class="btn btn-secondary btn-sm">
+            View All High-Risk Accounts <i class="fas fa-arrow-right"></i>
+        </a>
+    </div>
+
+    <div class="table-container">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Customer ID</th>
+                    <th>Churn Risk</th>
+                    <th>Risk Tier</th>
+                    <th>Tenure</th>
+                    <th>Monthly Bill</th>
+                    <th>Contract</th>
+                    <th>Internet Service</th>
+                    <th>Payment Method</th>
+                    <th>Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for u in urgent_customers %}
+                <tr>
+                    <td><strong>{{ u.customer_id }}</strong></td>
+                    <td><span style="color: var(--risk-high-text); font-weight: 700;">{{ u.churn_probability }}%</span></td>
+                    <td><span class="badge badge-high">HIGH RISK</span></td>
+                    <td>{{ u.tenure }} months</td>
+                    <td>${{ "%.2f"|format(u.monthly_charges) }}</td>
+                    <td>{{ u.contract }}</td>
+                    <td>{{ u.internet_service }}</td>
+                    <td>{{ u.payment_method }}</td>
+                    <td>
+                        <a href="{{ url_for('customers.customer_detail', customer_id=u.customer_id) }}" class="btn btn-secondary btn-sm">
+                            <i class="fas fa-eye"></i> View 360°
+                        </a>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="9" style="text-align: center; color: var(--text-muted); padding: 24px;">No high-risk accounts found in this dataset.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const chartEl = document.getElementById('riskDonutChart');
+        if (!chartEl) return;
+        const ctx = chartEl.getContext('2d');
+        
+        function getThemeConfig() {
+            const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+            return {
+                borderColor: isDark ? '#111827' : '#FFFFFF',
+                legendColor: isDark ? '#94A3B8' : '#64748B'
+            };
+        }
+
+        const themeCfg = getThemeConfig();
+        const donutChart = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['High Risk (≥48%)', 'Medium Risk (30-48%)', 'Low Risk (<30%)'],
+                datasets: [{
+                    data: [{{ high_risk_count }}, {{ medium_risk_count }}, {{ low_risk_count }}],
+                    backgroundColor: ['#DC2626', '#D97706', '#059669'],
+                    borderColor: themeCfg.borderColor,
+                    borderWidth: 2,
+                    hoverOffset: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: { color: themeCfg.legendColor, font: { family: 'Inter', size: 12 }, padding: 14 }
+                    }
+                },
+                cutout: '72%'
+            }
+        });
+
+        window.addEventListener('themeChanged', (e) => {
+            const isDark = e.detail.theme === 'dark';
+            donutChart.data.datasets[0].borderColor = isDark ? '#111827' : '#FFFFFF';
+            donutChart.options.plugins.legend.labels.color = isDark ? '#94A3B8' : '#64748B';
+            donutChart.update();
+        });
+    });
+</script>
+{% endblock %}

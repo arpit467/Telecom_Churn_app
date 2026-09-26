@@ -1,0 +1,310 @@
+{% extends "base.html" %}
+
+{% block title %}Customer Directory & Analytics — ChurnIntel AI{% endblock %}
+
+{% block content %}
+<!-- Page Header -->
+<div class="page-header">
+    <div class="page-title">
+        <h1>Customer Directory & Churn Risk Segmentation</h1>
+        <p>Analyze, segment, and explore subscriber records across <strong>{{ dataset_name }}</strong> ({{ total_customers }} total accounts).</p>
+    </div>
+    <div class="header-actions">
+        <a href="{{ url_for('predictions_api.export_predictions_csv', company_id=session.get('company_id', '')) }}" class="btn btn-secondary">
+            <i class="fas fa-file-csv"></i> Export CSV
+        </a>
+        <a href="{{ url_for('upload.upload_page') }}" class="btn btn-primary">
+            <i class="fas fa-file-import"></i> Upload New Data
+        </a>
+    </div>
+</div>
+
+<!-- Multi-Criteria Filter Card -->
+<div class="glass-card" style="padding: 18px 20px; margin-bottom: 20px;">
+    <form id="filterForm" method="GET" action="{{ url_for('customers.customer_list') }}">
+        
+        <!-- Top Row: Search + Risk Segment Buttons -->
+        <div style="display: flex; gap: 14px; flex-wrap: wrap; align-items: center; justify-content: space-between; margin-bottom: 16px; padding-bottom: 14px; border-bottom: 1px solid var(--border-subtle);">
+            <!-- Search ID -->
+            <div style="flex: 1; min-width: 280px; position: relative;">
+                <input type="text" name="q" id="searchQueryInput" value="{{ filters.q }}" placeholder="Search Customer ID (e.g. 7590-VHVEG or TEST300-0201)..." class="form-control" style="padding-left: 36px; height: 38px; font-size: 0.88rem;">
+                <i class="fas fa-search" style="position: absolute; left: 12px; top: 12px; color: var(--text-muted); font-size: 0.85rem;"></i>
+                {% if filters.q %}
+                <button type="button" onclick="clearSearch()" style="position: absolute; right: 10px; top: 9px; background: none; border: none; color: var(--text-muted); cursor: pointer;">
+                    <i class="fas fa-times"></i>
+                </button>
+                {% endif %}
+            </div>
+
+            <!-- Quick Risk Filter Buttons -->
+            <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
+                <span style="font-size: 0.8rem; color: var(--text-muted); font-weight: 500; margin-right: 4px;">Risk Tier:</span>
+                <input type="hidden" name="risk" id="riskInput" value="{{ filters.risk }}">
+                
+                <button type="button" onclick="selectRisk('ALL')" class="btn btn-sm {% if filters.risk == 'ALL' %}btn-primary{% else %}btn-secondary{% endif %}">
+                    All
+                </button>
+                <button type="button" onclick="selectRisk('HIGH')" class="btn btn-sm {% if filters.risk == 'HIGH' %}btn-primary{% else %}btn-secondary{% endif %}" style="{% if filters.risk == 'HIGH' %}background: var(--risk-high-text); border-color: var(--risk-high-text);{% else %}color: var(--risk-high-text); border-color: var(--risk-high-border);{% endif %}">
+                    ● High (&ge;48%)
+                </button>
+                <button type="button" onclick="selectRisk('MEDIUM')" class="btn btn-sm {% if filters.risk == 'MEDIUM' %}btn-primary{% else %}btn-secondary{% endif %}" style="{% if filters.risk == 'MEDIUM' %}background: var(--risk-med-text); border-color: var(--risk-med-text);{% else %}color: var(--risk-med-text); border-color: var(--risk-med-border);{% endif %}">
+                    ● Medium (30-48%)
+                </button>
+                <button type="button" onclick="selectRisk('LOW')" class="btn btn-sm {% if filters.risk == 'LOW' %}btn-primary{% else %}btn-secondary{% endif %}" style="{% if filters.risk == 'LOW' %}background: var(--risk-low-text); border-color: var(--risk-low-text);{% else %}color: var(--risk-low-text); border-color: var(--risk-low-border);{% endif %}">
+                    ● Low (&lt;30%)
+                </button>
+            </div>
+        </div>
+
+        <!-- Filter Dropdowns Grid -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 12px; margin-bottom: 14px;">
+            <!-- Contract -->
+            <div>
+                <label class="form-label">Contract Type</label>
+                <select name="contract" class="form-control" style="height: 34px; font-size: 0.82rem;">
+                    <option value="ALL" {% if filters.contract == 'ALL' %}selected{% endif %}>All Contracts</option>
+                    <option value="Month-to-month" {% if filters.contract == 'Month-to-month' %}selected{% endif %}>Month-to-month</option>
+                    <option value="One year" {% if filters.contract == 'One year' %}selected{% endif %}>One year</option>
+                    <option value="Two year" {% if filters.contract == 'Two year' %}selected{% endif %}>Two year</option>
+                </select>
+            </div>
+
+            <!-- Internet Service -->
+            <div>
+                <label class="form-label">Internet Service</label>
+                <select name="internet" class="form-control" style="height: 34px; font-size: 0.82rem;">
+                    <option value="ALL" {% if filters.internet == 'ALL' %}selected{% endif %}>All Internet</option>
+                    <option value="Fiber optic" {% if filters.internet == 'Fiber optic' %}selected{% endif %}>Fiber optic</option>
+                    <option value="DSL" {% if filters.internet == 'DSL' %}selected{% endif %}>DSL</option>
+                    <option value="No" {% if filters.internet == 'No' %}selected{% endif %}>No Internet</option>
+                </select>
+            </div>
+
+            <!-- Tech Support -->
+            <div>
+                <label class="form-label">Tech Support</label>
+                <select name="tech_support" class="form-control" style="height: 34px; font-size: 0.82rem;">
+                    <option value="ALL" {% if filters.tech_support == 'ALL' %}selected{% endif %}>All Status</option>
+                    <option value="Yes" {% if filters.tech_support == 'Yes' %}selected{% endif %}>With Tech Support</option>
+                    <option value="No" {% if filters.tech_support == 'No' %}selected{% endif %}>Without Tech Support</option>
+                </select>
+            </div>
+
+            <!-- Payment Method -->
+            <div>
+                <label class="form-label">Payment Method</label>
+                <select name="payment" class="form-control" style="height: 34px; font-size: 0.82rem;">
+                    <option value="ALL" {% if filters.payment == 'ALL' %}selected{% endif %}>All Payment Types</option>
+                    <option value="Electronic check" {% if filters.payment == 'Electronic check' %}selected{% endif %}>Electronic Check</option>
+                    <option value="Mailed check" {% if filters.payment == 'Mailed check' %}selected{% endif %}>Mailed Check</option>
+                    <option value="Bank transfer" {% if filters.payment == 'Bank transfer' %}selected{% endif %}>Bank Transfer (Auto)</option>
+                    <option value="Credit card" {% if filters.payment == 'Credit card' %}selected{% endif %}>Credit Card (Auto)</option>
+                </select>
+            </div>
+
+            <!-- Tenure Range -->
+            <div>
+                <label class="form-label">Tenure Duration</label>
+                <select name="tenure_range" class="form-control" style="height: 34px; font-size: 0.82rem;">
+                    <option value="ALL" {% if filters.tenure_range == 'ALL' %}selected{% endif %}>Any Tenure</option>
+                    <option value="0-12" {% if filters.tenure_range == '0-12' %}selected{% endif %}>0 - 12 months (New)</option>
+                    <option value="13-36" {% if filters.tenure_range == '13-36' %}selected{% endif %}>13 - 36 months (Mid)</option>
+                    <option value="37-72" {% if filters.tenure_range == '37-72' %}selected{% endif %}>37+ months (Loyal)</option>
+                </select>
+            </div>
+
+            <!-- Monthly Spend -->
+            <div>
+                <label class="form-label">Monthly Spend</label>
+                <select name="charges_range" class="form-control" style="height: 34px; font-size: 0.82rem;">
+                    <option value="ALL" {% if filters.charges_range == 'ALL' %}selected{% endif %}>Any Spend</option>
+                    <option value="0-35" {% if filters.charges_range == '0-35' %}selected{% endif %}>Budget (&lt; $35/mo)</option>
+                    <option value="35-75" {% if filters.charges_range == '35-75' %}selected{% endif %}>Standard ($35 - $75/mo)</option>
+                    <option value="75+" {% if filters.charges_range == '75+' %}selected{% endif %}>Premium (&gt; $75/mo)</option>
+                </select>
+            </div>
+
+            <!-- Senior Citizen -->
+            <div>
+                <label class="form-label">Senior Citizen</label>
+                <select name="senior_citizen" class="form-control" style="height: 34px; font-size: 0.82rem;">
+                    <option value="ALL" {% if filters.senior_citizen == 'ALL' %}selected{% endif %}>All Ages</option>
+                    <option value="1" {% if filters.senior_citizen == '1' %}selected{% endif %}>Senior (Age 65+)</option>
+                    <option value="0" {% if filters.senior_citizen == '0' %}selected{% endif %}>Non-Senior</option>
+                </select>
+            </div>
+
+            <!-- Sort Order -->
+            <div>
+                <label class="form-label">Sort Records By</label>
+                <select name="sort" class="form-control" style="height: 34px; font-size: 0.82rem;">
+                    <option value="churn_desc" {% if filters.sort == 'churn_desc' %}selected{% endif %}>Highest Risk First</option>
+                    <option value="churn_asc" {% if filters.sort == 'churn_asc' %}selected{% endif %}>Lowest Risk First</option>
+                    <option value="tenure_desc" {% if filters.sort == 'tenure_desc' %}selected{% endif %}>Longest Tenure</option>
+                    <option value="tenure_asc" {% if filters.sort == 'tenure_asc' %}selected{% endif %}>Newest Accounts</option>
+                    <option value="charges_desc" {% if filters.sort == 'charges_desc' %}selected{% endif %}>Highest Monthly Spend</option>
+                    <option value="charges_asc" {% if filters.sort == 'charges_asc' %}selected{% endif %}>Lowest Monthly Spend</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Action Row -->
+        <div style="display: flex; gap: 10px; align-items: center; justify-content: space-between; flex-wrap: wrap;">
+            <div style="display: flex; gap: 8px; align-items: center;">
+                <button type="submit" class="btn btn-primary btn-sm">
+                    <i class="fas fa-filter"></i> Apply Filters
+                </button>
+                <a href="{{ url_for('customers.customer_list') }}" class="btn btn-secondary btn-sm">
+                    <i class="fas fa-rotate-left"></i> Reset
+                </a>
+            </div>
+
+            <div style="font-size: 0.82rem; color: var(--text-muted);">
+                Showing <strong>{{ matching_total }}</strong> of {{ total_customers }} accounts ({{ "%.1f"|format((matching_total / total_customers * 100) if total_customers > 0 else 0) }}% match)
+            </div>
+        </div>
+    </form>
+</div>
+
+<!-- Active Filter Chips Bar (if active) -->
+{% if active_filters %}
+<div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap; margin-bottom: 16px;">
+    <span style="font-size: 0.78rem; color: var(--text-muted); font-weight: 600;">Active Filters:</span>
+    {% for af in active_filters %}
+    <span class="badge badge-neutral" style="padding: 3px 8px; font-size: 0.76rem;">
+        {{ af.label }}
+        <a href="javascript:void(0)" onclick="removeFilter('{{ af.key }}')" style="color: var(--text-muted); margin-left: 4px;" title="Remove">&times;</a>
+    </span>
+    {% endfor %}
+    <a href="{{ url_for('customers.customer_list') }}" style="font-size: 0.76rem; color: var(--primary); text-decoration: underline; margin-left: 4px;">Clear all</a>
+</div>
+{% endif %}
+
+<!-- Customer Data Table Card -->
+<div class="glass-card" style="padding: 0; overflow: hidden;">
+    <div class="table-container" style="border: none; border-radius: 0;">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Customer ID</th>
+                    <th>Risk Tier</th>
+                    <th>Predicted Churn</th>
+                    <th>Tenure</th>
+                    <th>Monthly Bill</th>
+                    <th>Contract</th>
+                    <th>Internet Service</th>
+                    <th>Tech Support</th>
+                    <th>Payment Method</th>
+                    <th style="text-align: right;">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in items %}
+                {% set c = item.customer %}
+                <tr>
+                    <td>
+                        <strong style="font-family: monospace; font-size: 0.88rem; color: var(--text-main);">{{ c.customer_id }}</strong>
+                        {% if c.senior_citizen == 1 %}
+                        <span class="badge badge-neutral" style="font-size: 0.68rem; margin-left: 4px;">Senior</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        {% if item.risk_level == 'HIGH' %}
+                            <span class="badge badge-high">HIGH</span>
+                        {% elif item.risk_level == 'MEDIUM' %}
+                            <span class="badge badge-medium">MEDIUM</span>
+                        {% elif item.risk_level == 'LOW' %}
+                            <span class="badge badge-low">LOW</span>
+                        {% else %}
+                            <span class="badge badge-neutral">UNSCORED</span>
+                        {% endif %}
+                    </td>
+                    <td>
+                        <div style="display: flex; align-items: center; gap: 8px;">
+                            <div style="width: 44px; height: 5px; background: var(--bg-subtle); border-radius: 3px; overflow: hidden;">
+                                <div style="width: {{ item.churn_prob }}%; height: 100%; {% if item.churn_prob >= 48 %}background: var(--risk-high-text);{% elif item.churn_prob >= 30 %}background: var(--risk-med-text);{% else %}background: var(--risk-low-text);{% endif %}"></div>
+                            </div>
+                            <span style="font-weight: 600; font-size: 0.86rem; {% if item.churn_prob >= 48 %}color: var(--risk-high-text);{% elif item.churn_prob >= 30 %}color: var(--risk-med-text);{% else %}color: var(--risk-low-text);{% endif %}">
+                                {{ item.churn_prob }}%
+                            </span>
+                        </div>
+                    </td>
+                    <td>{{ c.tenure|int }} mo</td>
+                    <td><strong>${{ "%.2f"|format(c.monthly_charges) }}</strong></td>
+                    <td><span class="badge badge-neutral">{{ c.contract }}</span></td>
+                    <td>{{ c.internet_service }}</td>
+                    <td>
+                        {% if c.tech_support == 'Yes' %}
+                            <span style="color: var(--risk-low-text);"><i class="fas fa-check"></i> Yes</span>
+                        {% else %}
+                            <span style="color: var(--text-muted);">&ndash;</span>
+                        {% endif %}
+                    </td>
+                    <td><span style="font-size: 0.8rem; color: var(--text-muted);">{{ c.payment_method }}</span></td>
+                    <td style="text-align: right;">
+                        <a href="{{ url_for('customers.customer_detail', customer_id=c.customer_id) }}" class="btn btn-secondary btn-sm">
+                            <i class="fas fa-eye"></i> View 360°
+                        </a>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="10" style="text-align: center; color: var(--text-muted); padding: 36px 20px;">
+                        <div style="font-size: 0.95rem; font-weight: 600; color: var(--text-main); margin-bottom: 4px;">No customer records match current filter criteria</div>
+                        <p style="font-size: 0.82rem; margin-bottom: 12px;">Try adjusting your search query, contract duration, or risk tier filters.</p>
+                        <a href="{{ url_for('customers.customer_list') }}" class="btn btn-secondary btn-sm">
+                            <i class="fas fa-rotate-left"></i> Reset Filters
+                        </a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Pagination Controls -->
+    {% if pagination and pagination.pages > 1 %}
+    <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 18px; border-top: 1px solid var(--border-color); font-size: 0.82rem; color: var(--text-muted); flex-wrap: wrap; gap: 10px;">
+        <span>Page <strong>{{ pagination.page }}</strong> of {{ pagination.pages }} ({{ pagination.total }} total accounts)</span>
+        <div style="display: flex; gap: 6px; align-items: center;">
+            {% if pagination.has_prev %}
+            <a href="{{ url_for('customers.customer_list', page=pagination.prev_num, q=filters.q, risk=filters.risk, contract=filters.contract, internet=filters.internet, tech_support=filters.tech_support, payment=filters.payment, tenure_range=filters.tenure_range, charges_range=filters.charges_range, senior_citizen=filters.senior_citizen, sort=filters.sort) }}" class="btn btn-secondary btn-sm">&laquo; Prev</a>
+            {% endif %}
+            
+            <span style="padding: 3px 8px; background: var(--bg-subtle); border-radius: var(--radius-sm); font-weight: 600; color: var(--text-main);">{{ pagination.page }}</span>
+            
+            {% if pagination.has_next %}
+            <a href="{{ url_for('customers.customer_list', page=pagination.next_num, q=filters.q, risk=filters.risk, contract=filters.contract, internet=filters.internet, tech_support=filters.tech_support, payment=filters.payment, tenure_range=filters.tenure_range, charges_range=filters.charges_range, senior_citizen=filters.senior_citizen, sort=filters.sort) }}" class="btn btn-secondary btn-sm">Next &raquo;</a>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+
+<script>
+function selectRisk(riskLevel) {
+    document.getElementById('riskInput').value = riskLevel;
+    document.getElementById('filterForm').submit();
+}
+
+function clearSearch() {
+    document.getElementById('searchQueryInput').value = '';
+    document.getElementById('filterForm').submit();
+}
+
+function removeFilter(filterKey) {
+    const form = document.getElementById('filterForm');
+    if (filterKey === 'q') {
+        const input = form.querySelector('[name="q"]');
+        if (input) input.value = '';
+    } else if (filterKey === 'risk') {
+        const input = document.getElementById('riskInput');
+        if (input) input.value = 'ALL';
+    } else {
+        const select = form.querySelector(`[name="${filterKey}"]`);
+        if (select) select.value = 'ALL';
+    }
+    form.submit();
+}
+</script>
+{% endblock %}

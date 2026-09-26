@@ -1,0 +1,317 @@
+{% extends "base.html" %}
+
+{% block title %}Customer 360° - {{ customer.customer_id }} | ChurnIntel AI{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 4px;">
+            <a href="{{ url_for('customers.customer_list') }}" style="color: var(--text-muted); font-size: 0.85rem; text-decoration: none; display: inline-flex; align-items: center; gap: 4px;">
+                <i class="fas fa-arrow-left"></i> Customer Directory
+            </a>
+            <span style="color: var(--border-color);">/</span>
+            <span style="color: var(--text-muted); font-size: 0.85rem;">Account Dossier</span>
+        </div>
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <h1 style="margin-bottom: 0;">{{ customer.customer_id }}</h1>
+            <span class="badge {% if prediction.risk_level == 'HIGH' %}badge-high{% elif prediction.risk_level == 'MEDIUM' %}badge-medium{% else %}badge-low{% endif %}" style="font-size: 0.85rem; padding: 4px 10px;">
+                <span class="badge-dot"></span> {{ prediction.risk_level }} RISK
+            </span>
+            <span style="font-size: 0.85rem; color: var(--text-muted);">
+                Model: <strong>{{ prediction.model_version or 'XGBoost Calibrated v2.4' }}</strong>
+            </span>
+        </div>
+        <p class="subtitle" style="margin-top: 4px;">Customer profile, calibrated TreeSHAP feature attributions, retention strategy, and counterfactual simulation.</p>
+    </div>
+    <div class="header-actions">
+        <a href="{{ url_for('customers.customer_list') }}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Directory
+        </a>
+        <button class="btn btn-primary" onclick="window.print()">
+            <i class="fas fa-file-export"></i> Export Report
+        </button>
+    </div>
+</div>
+
+<div class="grid-2">
+    <!-- Left Column: Churn Risk & Retention Strategy -->
+    <div style="display: flex; flex-direction: column; gap: 20px;">
+        
+        <!-- Risk Probability Card -->
+        <div class="card">
+            <div class="card-header">
+                <h3><i class="fas fa-chart-line" style="color: var(--primary);"></i> Churn Risk Assessment</h3>
+                <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 500;">Calibrated Ensemble</span>
+            </div>
+
+            <div style="display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 8px;">
+                <span style="font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted);">
+                    Predicted Churn Probability
+                </span>
+                <span style="font-size: 1.75rem; font-weight: 800; color: {% if prediction.churn_percentage >= 48 %}var(--danger){% elif prediction.churn_percentage >= 25 %}var(--warning){% else %}var(--success){% endif %};" id="dispChurnProb">
+                    {{ prediction.churn_percentage }}%
+                </span>
+            </div>
+
+            <!-- Clean Progress Bar -->
+            <div style="height: 8px; background: var(--bg-neutral); border-radius: 4px; overflow: hidden; margin-bottom: 12px;">
+                <div id="dispProgressBar" style="height: 100%; width: {{ prediction.churn_percentage }}%; background: {% if prediction.churn_percentage >= 48 %}var(--danger){% elif prediction.churn_percentage >= 25 %}var(--warning){% else %}var(--success){% endif %}; border-radius: 4px; transition: width 0.3s ease;"></div>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; font-size: 0.8rem; color: var(--text-muted); padding-top: 8px; border-top: 1px solid var(--border-color);">
+                <span>Retention Probability: <strong style="color: var(--text-main);">{{ prediction.retention_percentage }}%</strong></span>
+                <span>Decision Threshold: <strong style="color: var(--text-main);">48.0%</strong></span>
+            </div>
+        </div>
+
+        <!-- AI Retention Action Plan -->
+        <div class="card">
+            <div class="card-header">
+                <h3><i class="fas fa-lightbulb" style="color: var(--primary);"></i> Retention Strategy & Action Plan</h3>
+                <span class="source-indicator">Source: GenAI Action Engine</span>
+            </div>
+
+            <div style="font-size: 0.88rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 16px; padding-bottom: 14px; border-bottom: 1px solid var(--border-color);">
+                <strong style="color: var(--text-main); display: block; margin-bottom: 4px;">Executive Summary:</strong>
+                {{ ai_strategy.summary }}
+            </div>
+
+            <div style="margin-bottom: 16px;">
+                <span style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); display: block; margin-bottom: 8px;">
+                    Recommended Intervention Steps
+                </span>
+                <ul style="margin: 0; padding-left: 20px; font-size: 0.85rem; color: var(--text-main); line-height: 1.6;">
+                    {% for act in ai_strategy.action_steps %}
+                    <li style="margin-bottom: 6px;">{{ act }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+
+            {% if ai_strategy.retention_incentives %}
+            <div style="background: var(--bg-neutral); border: 1px solid var(--border-color); border-left: 3px solid var(--primary); padding: 10px 14px; border-radius: 6px; font-size: 0.82rem;">
+                <strong style="color: var(--text-main);"><i class="fas fa-tag" style="color: var(--primary); margin-right: 4px;"></i> Recommended Incentives:</strong>
+                <span style="color: var(--text-muted); margin-left: 4px;">{{ ai_strategy.retention_incentives|join(" • ") }}</span>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Account Profile Details -->
+        <div class="card">
+            <div class="card-header">
+                <h3><i class="fas fa-address-card" style="color: var(--primary);"></i> Customer Profile & Services</h3>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 14px; font-size: 0.85rem;">
+                <div style="display: flex; flex-direction: column; gap: 2px;">
+                    <span style="color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase;">Customer Tenure</span>
+                    <span style="font-weight: 600; color: var(--text-main);">{{ customer.tenure|int }} months</span>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 2px;">
+                    <span style="color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase;">Monthly Spend</span>
+                    <span style="font-weight: 600; color: var(--text-main);">${{ "%.2f"|format(customer.monthly_charges) }}/mo</span>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 2px;">
+                    <span style="color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase;">Lifetime Spend</span>
+                    <span style="font-weight: 600; color: var(--text-main);">${{ "%.2f"|format(customer.total_charges) }}</span>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 2px;">
+                    <span style="color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase;">Contract Term</span>
+                    <span style="font-weight: 600; color: var(--text-main);">{{ customer.contract }}</span>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 2px;">
+                    <span style="color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase;">Internet Service</span>
+                    <span style="font-weight: 600; color: var(--text-main);">{{ customer.internet_service }}</span>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 2px;">
+                    <span style="color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase;">Payment Method</span>
+                    <span style="font-weight: 600; color: var(--text-main);">{{ customer.payment_method }}</span>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 2px;">
+                    <span style="color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase;">Tech Support</span>
+                    <span style="font-weight: 600; color: var(--text-main);">{{ customer.tech_support }}</span>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 2px;">
+                    <span style="color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase;">Online Security</span>
+                    <span style="font-weight: 600; color: var(--text-main);">{{ customer.online_security }}</span>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 2px;">
+                    <span style="color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase;">Paperless Billing</span>
+                    <span style="font-weight: 600; color: var(--text-main);">{{ customer.paperless_billing }}</span>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 2px;">
+                    <span style="color: var(--text-muted); font-size: 0.75rem; text-transform: uppercase;">Phone / Multi-Lines</span>
+                    <span style="font-weight: 600; color: var(--text-main);">{{ customer.phone_service }} ({{ customer.multiple_lines }})</span>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Right Column: SHAP Waterfall & What-If Scenario Simulator -->
+    <div style="display: flex; flex-direction: column; gap: 20px;">
+        
+        <!-- SHAP Feature Attribution Waterfall -->
+        <div class="card">
+            <div class="card-header">
+                <h3><i class="fas fa-layer-group" style="color: var(--primary);"></i> SHAP Feature Attributions</h3>
+                <span class="source-indicator">Source: TreeSHAP Engine</span>
+            </div>
+            
+            <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 14px;">
+                Individual feature contributions to predicted churn risk score:
+                <span style="display: inline-flex; align-items: center; gap: 4px; margin-left: 8px; color: var(--danger); font-weight: 600;">
+                    <span style="width: 8px; height: 8px; background: var(--danger); border-radius: 2px;"></span> Increases Churn Risk
+                </span>
+                <span style="display: inline-flex; align-items: center; gap: 4px; margin-left: 8px; color: var(--success); font-weight: 600;">
+                    <span style="width: 8px; height: 8px; background: var(--success); border-radius: 2px;"></span> Protects Retention
+                </span>
+            </p>
+
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+                {% for f in shap_factors %}
+                <div style="background: var(--bg-neutral); border: 1px solid var(--border-color); border-radius: 6px; padding: 8px 12px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.82rem; margin-bottom: 6px;">
+                        <span style="font-weight: 600; color: var(--text-main);">{{ f.feature_name }}</span>
+                        <span style="font-weight: 700; font-family: monospace; font-size: 0.85rem; {% if f.impact_direction == 'INCREASES_CHURN' %}color: var(--danger);{% else %}color: var(--success);{% endif %}">
+                            {% if f.impact_direction == 'INCREASES_CHURN' %}+{{ "%.3f"|format(f.shap_value) }} ↑{% else %}{{ "%.3f"|format(f.shap_value) }} ↓{% endif %}
+                        </span>
+                    </div>
+                    <div style="height: 6px; background: var(--border-color); border-radius: 3px; overflow: hidden;">
+                        <div style="height: 100%; width: {{ [f.abs_shap * 200, 100]|min }}%; background: {% if f.impact_direction == 'INCREASES_CHURN' %}var(--danger){% else %}var(--success){% endif %}; border-radius: 3px;"></div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Interactive Counterfactual Simulator -->
+        <div class="card">
+            <div class="card-header">
+                <h3><i class="fas fa-sliders" style="color: var(--primary);"></i> Counterfactual What-If Simulation</h3>
+                <span class="badge badge-neutral">Model-Based Simulation</span>
+            </div>
+            
+            <p style="font-size: 0.82rem; color: var(--text-muted); margin-bottom: 14px;">
+                Test retention interventions by adjusting parameters to recompute ML probability in real time.
+            </p>
+
+            <form id="whatIfForm" onsubmit="runWhatIf(event)">
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px;">
+                    <div class="form-group">
+                        <label class="form-label">Contract Term</label>
+                        <select name="contract" id="simContract" class="form-control">
+                            <option value="Month-to-month" {% if customer.contract == 'Month-to-month' %}selected{% endif %}>Month-to-month</option>
+                            <option value="One year" {% if customer.contract == 'One year' %}selected{% endif %}>One year</option>
+                            <option value="Two year" {% if customer.contract == 'Two year' %}selected{% endif %}>Two year</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Payment Method</label>
+                        <select name="payment_method" id="simPayment" class="form-control">
+                            <option value="Electronic check" {% if customer.payment_method == 'Electronic check' %}selected{% endif %}>Electronic check</option>
+                            <option value="Credit card (automatic)" {% if customer.payment_method == 'Credit card (automatic)' %}selected{% endif %}>Credit card (automatic)</option>
+                            <option value="Bank transfer (automatic)" {% if customer.payment_method == 'Bank transfer (automatic)' %}selected{% endif %}>Bank transfer (automatic)</option>
+                            <option value="Mailed check" {% if customer.payment_method == 'Mailed check' %}selected{% endif %}>Mailed check</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Tech Support</label>
+                        <select name="tech_support" id="simSupport" class="form-control">
+                            <option value="No" {% if customer.tech_support == 'No' %}selected{% endif %}>No</option>
+                            <option value="Yes" {% if customer.tech_support == 'Yes' %}selected{% endif %}>Yes (Add Support)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Online Security</label>
+                        <select name="online_security" id="simSecurity" class="form-control">
+                            <option value="No" {% if customer.online_security == 'No' %}selected{% endif %}>No</option>
+                            <option value="Yes" {% if customer.online_security == 'Yes' %}selected{% endif %}>Yes (Add Security)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group" style="grid-column: span 2;">
+                        <label class="form-label">Monthly Charges ($)</label>
+                        <input type="number" step="0.5" name="monthly_charges" id="simMonthly" value="{{ customer.monthly_charges }}" class="form-control">
+                    </div>
+                </div>
+
+                <button type="submit" class="btn btn-primary" style="width: 100%;">
+                    <i class="fas fa-play"></i> Run Counterfactual Simulation
+                </button>
+            </form>
+
+            <!-- Simulation Result Block -->
+            <div id="simResultBox" style="display: none; margin-top: 16px; padding: 14px; background: var(--bg-neutral); border: 1px solid var(--border-color); border-radius: 8px;">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                    <span style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted);">
+                        Simulated Churn Probability
+                    </span>
+                    <span id="simRiskBadge" class="badge"></span>
+                </div>
+                <div style="display: flex; align-items: baseline; gap: 10px;">
+                    <span style="font-size: 1.8rem; font-weight: 800;" id="simProbText">0%</span>
+                    <span id="simDeltaText" style="font-size: 0.95rem; font-weight: 600;"></span>
+                </div>
+                <p style="font-size: 0.75rem; color: var(--text-muted); margin-top: 6px; margin-bottom: 0;" id="simDisclaimer"></p>
+            </div>
+        </div>
+
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    async function runWhatIf(e) {
+        e.preventDefault();
+        const payload = {
+            modifications: {
+                contract: document.getElementById('simContract').value,
+                payment_method: document.getElementById('simPayment').value,
+                tech_support: document.getElementById('simSupport').value,
+                online_security: document.getElementById('simSecurity').value,
+                monthly_charges: parseFloat(document.getElementById('simMonthly').value)
+            }
+        };
+
+        try {
+            const resp = await fetch("{{ url_for('predictions_api.api_what_if_simulation', customer_id=customer.customer_id) }}", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload)
+            });
+            const data = await resp.json();
+            if (data.success) {
+                const sim = data.simulation;
+                const resultBox = document.getElementById('simResultBox');
+                const probText = document.getElementById('simProbText');
+                const deltaText = document.getElementById('simDeltaText');
+                const riskBadge = document.getElementById('simRiskBadge');
+                const disclaimer = document.getElementById('simDisclaimer');
+
+                resultBox.style.display = 'block';
+                probText.innerText = sim.simulated_probability + "%";
+                
+                if (sim.is_risk_reduced) {
+                    probText.style.color = 'var(--success)';
+                    deltaText.style.color = 'var(--success)';
+                    deltaText.innerHTML = `<i class="fas fa-arrow-down"></i> ${sim.percentage_change} Risk Reduction`;
+                } else {
+                    probText.style.color = 'var(--danger)';
+                    deltaText.style.color = 'var(--danger)';
+                    deltaText.innerHTML = `<i class="fas fa-arrow-up"></i> ${sim.percentage_change} Risk Increase`;
+                }
+
+                riskBadge.innerText = sim.simulated_risk + " RISK";
+                riskBadge.className = 'badge ' + (sim.simulated_risk === 'HIGH' ? 'badge-high' : (sim.simulated_risk === 'MEDIUM' ? 'badge-medium' : 'badge-low'));
+                disclaimer.innerText = "Source: " + sim.disclaimer;
+            }
+        } catch (err) {
+            alert("Error simulating scenario: " + err);
+        }
+    }
+</script>
+{% endblock %}

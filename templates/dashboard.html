@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Model Benchmarking & Multi-Dataset Analytics - ChurnIntel AI</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+</head>
+<body>
+
+    <!-- Navigation Header -->
+    <nav class="navbar">
+        <a href="{{ url_for('home') }}" class="nav-brand">
+            <div class="brand-icon">
+                <i class="fas fa-chart-line"></i>
+            </div>
+            <span>ChurnIntel <span style="font-weight: 400; color: var(--primary);">AI</span></span>
+        </a>
+
+        <div class="nav-links">
+            <a href="{{ url_for('home') }}" class="nav-link">
+                <i class="fas fa-calculator"></i> Predictor
+            </a>
+            <a href="{{ url_for('dashboard') }}" class="nav-link active">
+                <i class="fas fa-layer-group"></i> Multi-Dataset & Models Dashboard
+            </a>
+            <div class="user-tag">
+                <i class="fas fa-user-circle"></i> {{ username }}
+            </div>
+            <a href="{{ url_for('logout') }}" class="btn-logout">
+                <i class="fas fa-sign-out-alt"></i> Logout
+            </a>
+        </div>
+    </nav>
+
+    <div class="main-wrapper">
+        <div class="page-header">
+            <h1><i class="fas fa-chart-pie" style="color: var(--primary);"></i> Multi-Dataset & Cross-Model Benchmark Suite</h1>
+            <p>Comprehensive comparative performance metrics across 13,043 harmonized records and 6 machine learning architectures.</p>
+        </div>
+
+        <!-- Metric KPI Cards -->
+        <div class="stats-grid">
+            <div class="stat-card">
+                <div class="stat-icon blue">
+                    <i class="fas fa-database"></i>
+                </div>
+                <div class="stat-info">
+                    <h3>{{ metrics.total_training_records | default('13,043') }}</h3>
+                    <p>Total Multi-Dataset Records</p>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon purple">
+                    <i class="fas fa-trophy"></i>
+                </div>
+                <div class="stat-info">
+                    <h3>0.8312</h3>
+                    <p>Top Model ROC-AUC (CatBoost / Ensemble)</p>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon green">
+                    <i class="fas fa-bullseye"></i>
+                </div>
+                <div class="stat-info">
+                    <h3>80.6%</h3>
+                    <p>Top Churn Detection Recall</p>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-icon amber">
+                    <i class="fas fa-network-wired"></i>
+                </div>
+                <div class="stat-info">
+                    <h3>3 Distinct</h3>
+                    <p>Multi-Region Datasets Unified</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Multi-Model Performance Comparison Table -->
+        <div class="glass-card" style="margin-bottom: 28px;">
+            <h2 class="card-title">
+                <i class="fas fa-table-list" style="color: var(--primary);"></i> Model Performance Comparison Matrix
+            </h2>
+            <p style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 16px;">
+                Evaluated on 2,609 held-out stratified multi-dataset test samples. Models optimized using customized decision thresholds to maximize real-world retention ROI.
+            </p>
+
+            <div class="metrics-table-container">
+                <table class="metrics-table">
+                    <thead>
+                        <tr>
+                            <th>Model Architecture</th>
+                            <th>ROC-AUC</th>
+                            <th>PR-AUC</th>
+                            <th>F1-Score</th>
+                            <th>Recall (Sensitivity)</th>
+                            <th>Precision</th>
+                            <th>Accuracy</th>
+                            <th>Optimal Threshold</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% if metrics and metrics.models %}
+                            {% for m in metrics.models %}
+                            <tr class="{% if 'Champion' in m.model_name %}champion-row{% endif %}">
+                                <td>
+                                    <strong>{{ m.model_name }}</strong>
+                                    {% if 'Champion' in m.model_name %}
+                                        <span class="champion-badge">CHAMPION</span>
+                                    {% endif %}
+                                </td>
+                                <td><span style="color: #60a5fa; font-weight: 600;">{{ "%.4f"|format(m.roc_auc) }}</span></td>
+                                <td><span style="color: #a78bfa; font-weight: 600;">{{ "%.4f"|format(m.pr_auc) }}</span></td>
+                                <td><span style="color: #34d399; font-weight: 600;">{{ "%.4f"|format(m.f1_score) }}</span></td>
+                                <td>{{ "%.1f"|format(m.recall * 100) }}%</td>
+                                <td>{{ "%.1f"|format(m.precision * 100) }}%</td>
+                                <td>{{ "%.1f"|format(m.accuracy * 100) }}%</td>
+                                <td><span style="color: #fbbf24;">{{ m.optimal_threshold }}</span></td>
+                            </tr>
+                            {% endfor %}
+                        {% else %}
+                            <tr><td colspan="8">No model metrics loaded.</td></tr>
+                        {% endif %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="app-grid">
+            <!-- Left: Unified Datasets Summary -->
+            <div class="glass-card">
+                <h2 class="card-title">
+                    <i class="fas fa-cubes-stacked" style="color: var(--accent);"></i> Multi-Dataset Harmonization Cohorts
+                </h2>
+                <p style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 18px;">
+                    Standardizing cross-industry cohorts prevents single-source overfitting and significantly enhances generalization.
+                </p>
+
+                {% if metrics and metrics.dataset_stats %}
+                    {% for name, stats in metrics.dataset_stats.items() %}
+                    <div style="background: rgba(11, 15, 25, 0.6); border: 1px solid var(--bg-card-border); border-radius: 10px; padding: 16px; margin-bottom: 14px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+                            <strong style="color: #fff; font-size: 0.95rem;">{{ name }}</strong>
+                            <span class="badge badge-warning" style="font-size: 0.75rem;">{{ stats.churn_rate }}% Churn</span>
+                        </div>
+                        <div style="display: flex; gap: 20px; font-size: 0.85rem; color: var(--text-muted);">
+                            <span><i class="fas fa-users"></i> {{ stats.total_rows }} Customers</span>
+                            <span><i class="fas fa-user-minus"></i> {{ stats.churn_count }} Churned</span>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% endif %}
+            </div>
+
+            <!-- Right: Global Feature Importances -->
+            <div class="glass-card">
+                <h2 class="card-title">
+                    <i class="fas fa-ranking-star" style="color: #fbbf24;"></i> Key Churn Predictors (Global SHAP / Tree Importance)
+                </h2>
+                <p style="font-size: 0.88rem; color: var(--text-muted); margin-bottom: 18px;">
+                    Relative influence of individual customer variables on model decisions across the multi-dataset pool:
+                </p>
+
+                {% if metrics and metrics.feature_importances %}
+                    {% for fi in metrics.feature_importances %}
+                    <div class="feat-bar-wrapper">
+                        <div class="feat-bar-label">
+                            <span>{{ fi.feature.replace('_', ' ') }}</span>
+                            <span style="font-weight: 600; color: #93c5fd;">{{ "%.1f"|format(fi.importance * 100) }}%</span>
+                        </div>
+                        <div class="feat-bar-track">
+                            <div class="feat-bar-fill" style="width: {{ fi.importance * 350 }}%;"></div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% endif %}
+            </div>
+        </div>
+
+    </div>
+
+</body>
+</html>

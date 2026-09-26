@@ -2,149 +2,340 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Telecom Churn Predictor</title>
-    <link rel="stylesheet" type="text/css" href="{{ url_for('static', filename='style.css') }}">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChurnIntel AI - Enterprise Customer Retention Platform</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 </head>
 <body>
 
-    <!-- Background image -->
-    <div class="background-image"></div>
-
-    <!-- Top bar with logout -->
-    <div class="top-bar">
-        <span>👋 Welcome {{ username }}</span>
-        <a href="{{ url_for('logout') }}" class="logout-btn">Logout</a>
-    </div>
-
-    <div class="container animated fadeIn">
-        <h2><i class="fas fa-phone-volume"></i> Telecom Customer Churn Predictor</h2>
-
-        <form action="/predict" method="POST">
-            Gender:
-            <select name="gender">
-                <option>Male</option>
-                <option>Female</option>
-            </select><br><br>
-
-            Senior Citizen:
-            <select name="senior">
-                <option value="0">No</option>
-                <option value="1">Yes</option>
-            </select><br><br>
-
-            Partner:
-            <select name="partner">
-                <option>Yes</option>
-                <option>No</option>
-            </select><br><br>
-
-            Dependents:
-            <select name="dependents">
-                <option>Yes</option>
-                <option>No</option>
-            </select><br><br>
-
-            Phone Service:
-            <select name="phone">
-                <option>Yes</option>
-                <option>No</option>
-            </select><br><br>
-
-            Multiple Lines:
-            <select name="multiple">
-                <option>Yes</option>
-                <option>No</option>
-                <option>No phone service</option>
-            </select><br><br>
-
-            Internet Service:
-            <select name="internet">
-                <option>DSL</option>
-                <option>Fiber optic</option>
-                <option>No</option>
-            </select><br><br>
-
-            Online Security:
-            <select name="security">
-                <option>Yes</option>
-                <option>No</option>
-                <option>No internet service</option>
-            </select><br><br>
-
-            Online Backup:
-            <select name="backup">
-                <option>Yes</option>
-                <option>No</option>
-                <option>No internet service</option>
-            </select><br><br>
-
-            Device Protection:
-            <select name="protection">
-                <option>Yes</option>
-                <option>No</option>
-                <option>No internet service</option>
-            </select><br><br>
-
-            Tech Support:
-            <select name="support">
-                <option>Yes</option>
-                <option>No</option>
-                <option>No internet service</option>
-            </select><br><br>
-
-            Streaming TV:
-            <select name="tv">
-                <option>Yes</option>
-                <option>No</option>
-                <option>No internet service</option>
-            </select><br><br>
-
-            Streaming Movies:
-            <select name="movies">
-                <option>Yes</option>
-                <option>No</option>
-                <option>No internet service</option>
-            </select><br><br>
-
-            Contract:
-            <select name="contract">
-                <option>Month-to-month</option>
-                <option>One year</option>
-                <option>Two year</option>
-            </select><br><br>
-
-            Paperless Billing:
-            <select name="paperless">
-                <option>Yes</option>
-                <option>No</option>
-            </select><br><br>
-
-            Payment Method:
-            <select name="payment">
-                <option>Electronic check</option>
-                <option>Mailed check</option>
-                <option>Credit card (automatic)</option>
-                <option>Bank transfer (automatic)</option>
-            </select><br><br>
-
-            Tenure (in months):
-            <input type="number" name="tenure" min="0" required><br><br>
-
-            Monthly Charges:
-            <input type="number" step="0.01" name="monthly" min="0" required><br><br>
-
-            Total Charges:
-            <input type="number" step="0.01" name="total" min="0" required><br><br>
-
-            <input type="submit" value="Predict">
-        </form>
-
-        {% if prediction %}
-            <div class="result {{ 'warning' if 'Likely' in prediction else 'success' }}">
-                <h3>{{ prediction }}</h3>
+    <!-- Navigation Header -->
+    <nav class="navbar">
+        <a href="{{ url_for('home') }}" class="nav-brand">
+            <div class="brand-icon">
+                <i class="fas fa-chart-line"></i>
             </div>
-        {% endif %}
+            <span>ChurnIntel <span style="font-weight: 400; color: var(--primary);">AI</span></span>
+        </a>
+
+        <div class="nav-links">
+            <a href="{{ url_for('home') }}" class="nav-link active">
+                <i class="fas fa-calculator"></i> Predictor
+            </a>
+            <a href="{{ url_for('dashboard') }}" class="nav-link">
+                <i class="fas fa-layer-group"></i> Multi-Dataset & Models Dashboard
+            </a>
+            <div class="user-tag">
+                <i class="fas fa-user-circle"></i> {{ username }}
+            </div>
+            <a href="{{ url_for('logout') }}" class="btn-logout">
+                <i class="fas fa-sign-out-alt"></i> Logout
+            </a>
+        </div>
+    </nav>
+
+    <div class="main-wrapper">
+        <div class="page-header">
+            <h1><i class="fas fa-brain" style="color: var(--accent);"></i> Customer Churn Risk Intelligence</h1>
+            <p>Predict customer attrition risk using multi-dataset trained ensemble models (XGBoost, CatBoost, Random Forest, & Stacking).</p>
+        </div>
+
+        <div class="app-grid">
+            <!-- Left Column: Input Form -->
+            <div class="glass-card">
+                <h2 class="card-title">
+                    <i class="fas fa-user-gear" style="color: var(--primary);"></i> Customer Profile & Contract Data
+                </h2>
+
+                <form action="/predict" method="POST">
+                    <!-- Model Selector Block -->
+                    <div class="model-select-wrapper">
+                        <label class="section-label" style="margin-bottom: 6px;">
+                            <i class="fas fa-microchip"></i> Select Prediction Engine
+                        </label>
+                        <select name="model_choice" class="form-control" style="background: rgba(15, 23, 42, 0.9);">
+                            <option value="champion_ensemble" {% if prediction and prediction.model_key == 'champion_ensemble' %}selected{% endif %}>
+                                🏆 Champion Stacking Ensemble (XGBoost + CatBoost + GB + RF) [Recommended]
+                            </option>
+                            <option value="catboost" {% if prediction and prediction.model_key == 'catboost' %}selected{% endif %}>
+                                ⚡ CatBoost Classifier (Optimized for Categorical Patterns)
+                            </option>
+                            <option value="xgboost" {% if prediction and prediction.model_key == 'xgboost' %}selected{% endif %}>
+                                🚀 XGBoost Classifier (Extreme Gradient Boosting)
+                            </option>
+                            <option value="gradient_boosting" {% if prediction and prediction.model_key == 'gradient_boosting' %}selected{% endif %}>
+                                🌲 Gradient Boosting Machine
+                            </option>
+                            <option value="random_forest" {% if prediction and prediction.model_key == 'random_forest' %}selected{% endif %}>
+                                🌳 Random Forest Classifier
+                            </option>
+                            <option value="logistic_regression" {% if prediction and prediction.model_key == 'logistic_regression' %}selected{% endif %}>
+                                📉 Logistic Regression (Legacy Baseline)
+                            </option>
+                        </select>
+                    </div>
+
+                    <!-- 1. Customer Demographics -->
+                    <div class="form-section">
+                        <span class="section-label"><i class="fas fa-id-card"></i> 1. Demographics & Relationship</span>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Gender</label>
+                                <select name="gender" class="form-control">
+                                    <option {% if prediction and prediction.inputs.gender == 'Male' %}selected{% endif %}>Male</option>
+                                    <option {% if prediction and prediction.inputs.gender == 'Female' %}selected{% endif %}>Female</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Senior Citizen</label>
+                                <select name="senior" class="form-control">
+                                    <option value="0" {% if prediction and prediction.inputs.SeniorCitizen == '0' %}selected{% endif %}>No</option>
+                                    <option value="1" {% if prediction and prediction.inputs.SeniorCitizen == '1' %}selected{% endif %}>Yes</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Partner Status</label>
+                                <select name="partner" class="form-control">
+                                    <option {% if prediction and prediction.inputs.Partner == 'No' %}selected{% endif %}>No</option>
+                                    <option {% if prediction and prediction.inputs.Partner == 'Yes' %}selected{% endif %}>Yes</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Dependents</label>
+                                <select name="dependents" class="form-control">
+                                    <option {% if prediction and prediction.inputs.Dependents == 'No' %}selected{% endif %}>No</option>
+                                    <option {% if prediction and prediction.inputs.Dependents == 'Yes' %}selected{% endif %}>Yes</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 2. Services & Digital Bundle -->
+                    <div class="form-section">
+                        <span class="section-label"><i class="fas fa-network-wired"></i> 2. Subscribed Services & Telephony</span>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Phone Service</label>
+                                <select name="phone" class="form-control">
+                                    <option {% if prediction and prediction.inputs.PhoneService == 'Yes' %}selected{% endif %}>Yes</option>
+                                    <option {% if prediction and prediction.inputs.PhoneService == 'No' %}selected{% endif %}>No</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Multiple Lines</label>
+                                <select name="multiple" class="form-control">
+                                    <option {% if prediction and prediction.inputs.MultipleLines == 'No' %}selected{% endif %}>No</option>
+                                    <option {% if prediction and prediction.inputs.MultipleLines == 'Yes' %}selected{% endif %}>Yes</option>
+                                    <option {% if prediction and prediction.inputs.MultipleLines == 'No phone service' %}selected{% endif %}>No phone service</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Internet Service Type</label>
+                                <select name="internet" class="form-control">
+                                    <option {% if prediction and prediction.inputs.InternetService == 'Fiber optic' %}selected{% endif %}>Fiber optic</option>
+                                    <option {% if prediction and prediction.inputs.InternetService == 'DSL' %}selected{% endif %}>DSL</option>
+                                    <option {% if prediction and prediction.inputs.InternetService == 'No' %}selected{% endif %}>No</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Online Security</label>
+                                <select name="security" class="form-control">
+                                    <option {% if prediction and prediction.inputs.OnlineSecurity == 'No' %}selected{% endif %}>No</option>
+                                    <option {% if prediction and prediction.inputs.OnlineSecurity == 'Yes' %}selected{% endif %}>Yes</option>
+                                    <option {% if prediction and prediction.inputs.OnlineSecurity == 'No internet service' %}selected{% endif %}>No internet service</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Tech Support</label>
+                                <select name="support" class="form-control">
+                                    <option {% if prediction and prediction.inputs.TechSupport == 'No' %}selected{% endif %}>No</option>
+                                    <option {% if prediction and prediction.inputs.TechSupport == 'Yes' %}selected{% endif %}>Yes</option>
+                                    <option {% if prediction and prediction.inputs.TechSupport == 'No internet service' %}selected{% endif %}>No internet service</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Online Backup</label>
+                                <select name="backup" class="form-control">
+                                    <option {% if prediction and prediction.inputs.OnlineBackup == 'No' %}selected{% endif %}>No</option>
+                                    <option {% if prediction and prediction.inputs.OnlineBackup == 'Yes' %}selected{% endif %}>Yes</option>
+                                    <option {% if prediction and prediction.inputs.OnlineBackup == 'No internet service' %}selected{% endif %}>No internet service</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Device Protection</label>
+                                <select name="protection" class="form-control">
+                                    <option {% if prediction and prediction.inputs.DeviceProtection == 'No' %}selected{% endif %}>No</option>
+                                    <option {% if prediction and prediction.inputs.DeviceProtection == 'Yes' %}selected{% endif %}>Yes</option>
+                                    <option {% if prediction and prediction.inputs.DeviceProtection == 'No internet service' %}selected{% endif %}>No internet service</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Streaming TV</label>
+                                <select name="tv" class="form-control">
+                                    <option {% if prediction and prediction.inputs.StreamingTV == 'No' %}selected{% endif %}>No</option>
+                                    <option {% if prediction and prediction.inputs.StreamingTV == 'Yes' %}selected{% endif %}>Yes</option>
+                                    <option {% if prediction and prediction.inputs.StreamingTV == 'No internet service' %}selected{% endif %}>No internet service</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Streaming Movies</label>
+                                <select name="movies" class="form-control">
+                                    <option {% if prediction and prediction.inputs.StreamingMovies == 'No' %}selected{% endif %}>No</option>
+                                    <option {% if prediction and prediction.inputs.StreamingMovies == 'Yes' %}selected{% endif %}>Yes</option>
+                                    <option {% if prediction and prediction.inputs.StreamingMovies == 'No internet service' %}selected{% endif %}>No internet service</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 3. Contract & Billing Dynamics -->
+                    <div class="form-section">
+                        <span class="section-label"><i class="fas fa-file-contract"></i> 3. Contract, Billing & Tenure</span>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Contract Term</label>
+                                <select name="contract" class="form-control">
+                                    <option {% if prediction and prediction.inputs.Contract == 'Month-to-month' %}selected{% endif %}>Month-to-month</option>
+                                    <option {% if prediction and prediction.inputs.Contract == 'One year' %}selected{% endif %}>One year</option>
+                                    <option {% if prediction and prediction.inputs.Contract == 'Two year' %}selected{% endif %}>Two year</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Payment Method</label>
+                                <select name="payment" class="form-control">
+                                    <option {% if prediction and prediction.inputs.PaymentMethod == 'Electronic check' %}selected{% endif %}>Electronic check</option>
+                                    <option {% if prediction and prediction.inputs.PaymentMethod == 'Mailed check' %}selected{% endif %}>Mailed check</option>
+                                    <option {% if prediction and prediction.inputs.PaymentMethod == 'Bank transfer (automatic)' %}selected{% endif %}>Bank transfer (automatic)</option>
+                                    <option {% if prediction and prediction.inputs.PaymentMethod == 'Credit card (automatic)' %}selected{% endif %}>Credit card (automatic)</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Paperless Billing</label>
+                                <select name="paperless" class="form-control">
+                                    <option {% if prediction and prediction.inputs.PaperlessBilling == 'Yes' %}selected{% endif %}>Yes</option>
+                                    <option {% if prediction and prediction.inputs.PaperlessBilling == 'No' %}selected{% endif %}>No</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label>Tenure (in Months)</label>
+                                <input type="number" name="tenure" min="0" max="72" value="{{ prediction.inputs.tenure if prediction else '6' }}" required class="form-control">
+                            </div>
+                            <div class="form-group">
+                                <label>Monthly Charges ($)</label>
+                                <input type="number" step="0.01" name="monthly" min="0" value="{{ prediction.inputs.MonthlyCharges if prediction else '75.50' }}" required class="form-control">
+                            </div>
+                            <div class="form-group">
+                                <label>Total Charges ($)</label>
+                                <input type="number" step="0.01" name="total" min="0" value="{{ prediction.inputs.TotalCharges if prediction else '450.00' }}" required class="form-control">
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn-predict">
+                        <i class="fas fa-bolt"></i> Run Multi-Model Churn Analysis
+                    </button>
+                </form>
+            </div>
+
+            <!-- Right Column: Churn Insights & Prediction -->
+            <div class="glass-card">
+                <h2 class="card-title">
+                    <i class="fas fa-shield-halved" style="color: var(--accent);"></i> Churn Risk Analysis & Strategy
+                </h2>
+
+                {% if prediction %}
+                    <div class="risk-header">
+                        <span class="badge {{ prediction.insights.risk_badge }}">
+                            <i class="fas {% if prediction.is_churn %}fa-triangle-exclamation{% else %}fa-circle-check{% endif %}"></i>
+                            {{ prediction.insights.risk_tier }}
+                        </span>
+                        <span style="font-size: 0.8rem; color: var(--text-muted);">
+                            Model: {{ prediction.model_name.split('(')[0] }}
+                        </span>
+                    </div>
+
+                    <!-- Risk Percentage Meter -->
+                    <div class="meter-card">
+                        <span class="meter-subtitle">PREDICTED CHURN PROBABILITY</span>
+                        <div class="meter-percentage {% if prediction.probability >= 60 %}danger{% elif prediction.probability >= 35 %}warning{% else %}success{% endif %}">
+                            {{ prediction.probability }}%
+                        </div>
+                        <div class="meter-bar-container">
+                            <div class="meter-bar {% if prediction.probability >= 60 %}danger{% elif prediction.probability >= 35 %}warning{% else %}success{% endif %}" style="width: {{ prediction.probability }}%;"></div>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text-muted); margin-top: 6px;">
+                            <span>Safe (0%)</span>
+                            <span>Optimal Decision Cutoff: {{ prediction.threshold }}%</span>
+                            <span>Definite Churn (100%)</span>
+                        </div>
+                    </div>
+
+                    <!-- Identified Churn Drivers / Risk Factors -->
+                    {% if prediction.insights.risk_factors %}
+                    <div class="factor-section">
+                        <div class="factor-title">
+                            <i class="fas fa-circle-exclamation" style="color: var(--danger);"></i> Primary Churn Vulnerabilities
+                        </div>
+                        <ul class="factor-list">
+                            {% for factor in prediction.insights.risk_factors %}
+                            <li class="factor-item risk">
+                                <i class="fas fa-arrow-trend-up"></i>
+                                <span>{{ factor }}</span>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+
+                    <!-- Positive Retention Anchors -->
+                    {% if prediction.insights.protective_factors %}
+                    <div class="factor-section">
+                        <div class="factor-title">
+                            <i class="fas fa-shield-check" style="color: var(--success);"></i> Retention Anchors & Strengths
+                        </div>
+                        <ul class="factor-list">
+                            {% for factor in prediction.insights.protective_factors %}
+                            <li class="factor-item safe">
+                                <i class="fas fa-check"></i>
+                                <span>{{ factor }}</span>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+
+                    <!-- AI Business Recommendations -->
+                    <div class="factor-section">
+                        <div class="factor-title">
+                            <i class="fas fa-lightbulb" style="color: var(--primary);"></i> Recommended Retention Actions
+                        </div>
+                        <ul class="factor-list">
+                            {% for rec in prediction.insights.recommendations %}
+                            <li class="factor-item action">
+                                <i class="fas fa-wand-magic-sparkles"></i>
+                                <span>{{ rec }}</span>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+
+                {% else %}
+                    <!-- Initial Placeholder State -->
+                    <div class="empty-state">
+                        <i class="fas fa-chart-pie"></i>
+                        <h3 style="color: #fff; margin-bottom: 8px;">No Prediction Run Yet</h3>
+                        <p>Adjust the customer parameters on the left and choose a model engine to generate full churn risk analysis and retention action steps.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
     </div>
 
 </body>

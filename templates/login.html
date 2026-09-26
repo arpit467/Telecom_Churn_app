@@ -2,28 +2,58 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Login | Churn Predictor</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='test.css') }}">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login - ChurnIntel AI</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 </head>
 <body>
-    <div class="container">
-        <h2>🔐 Login to Churn Predictor</h2>
 
-        <form method="POST" action="/">
-            <label>👤 Username:</label><br>
-            <input type="text" name="username" required><br>
+    <div class="auth-container">
+        <div class="auth-header">
+            <div class="brand-icon" style="margin: 0 auto; width: 48px; height: 48px; font-size: 1.4rem;">
+                <i class="fas fa-chart-line"></i>
+            </div>
+            <h2>ChurnIntel AI</h2>
+            <p>Multi-Dataset Customer Retention Platform</p>
+        </div>
 
-            <label>🔑 Password:</label><br>
-            <input type="password" name="password" required><br>
+        <div class="glass-card">
+            <h3 style="color: #fff; font-size: 1.15rem; margin-bottom: 18px; font-weight: 600;">
+                <i class="fas fa-lock" style="color: var(--primary);"></i> Account Sign In
+            </h3>
 
-            <input type="submit" value="Login">
-        </form>
+            {% if error %}
+                <div style="background: var(--danger-bg); border: 1px solid rgba(239, 68, 68, 0.3); color: #fca5a5; padding: 10px 14px; border-radius: 8px; font-size: 0.88rem; margin-bottom: 16px;">
+                    <i class="fas fa-triangle-exclamation"></i> {{ error }}
+                </div>
+            {% endif %}
 
-        {% if error %}
-            <p style="color: red;">{{ error }}</p>
-        {% endif %}
+            <form method="POST" action="/">
+                <div class="form-group" style="margin-bottom: 16px;">
+                    <label><i class="fas fa-user"></i> Username</label>
+                    <input type="text" name="username" placeholder="Enter your username" required class="form-control" autofocus>
+                </div>
 
-        <p>Don't have an account? <a href="{{ url_for('register') }}">Register here</a></p>
+                <div class="form-group" style="margin-bottom: 20px;">
+                    <label><i class="fas fa-key"></i> Password</label>
+                    <input type="password" name="password" placeholder="••••••••" required class="form-control">
+                </div>
+
+                <button type="submit" class="btn-predict">
+                    <i class="fas fa-arrow-right-to-bracket"></i> Sign In to Dashboard
+                </button>
+            </form>
+
+            <div class="demo-credentials">
+                <i class="fas fa-circle-info"></i> <strong>Default Credentials:</strong> username: <code>admin</code> | password: <code>admin123</code>
+            </div>
+
+            <div class="auth-footer">
+                Don't have an account? <a href="{{ url_for('register') }}">Create an account</a>
+            </div>
+        </div>
     </div>
+
 </body>
 </html>

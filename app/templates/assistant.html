@@ -1,0 +1,456 @@
+{% extends "base.html" %}
+
+{% block title %}AI Retention Assistant | ChurnIntel AI{% endblock %}
+
+{% block content %}
+<div class="page-header" style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px;">
+    <div>
+        <h1>AI Retention Assistant</h1>
+        <p class="subtitle">Ask questions about customers, churn risk, segments, and retention opportunities.</p>
+    </div>
+    
+    <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+        <!-- LLM Model Provider Status & Settings -->
+        <button onclick="openSettingsModal()" class="btn btn-secondary btn-sm" id="modelStatusBtn">
+            <span style="width: 8px; height: 8px; border-radius: 50%; background: var(--success); display: inline-block;"></span>
+            <span id="activeModelLabel">
+                {% if active_provider == 'gemini' %}
+                Google Gemini (RAG Active)
+                {% elif active_provider == 'openai' %}
+                OpenAI GPT (RAG Active)
+                {% elif active_provider == 'groq' %}
+                Groq Llama (RAG Active)
+                {% else %}
+                Semantic Analytics Engine
+                {% endif %}
+            </span>
+            <i class="fas fa-cog" style="color: var(--text-muted); margin-left: 4px;"></i>
+        </button>
+
+        <!-- Active Dataset Context -->
+        <div style="background: var(--card-bg); border: 1px solid var(--border-color); border-radius: var(--radius); padding: 6px 12px; display: flex; align-items: center; gap: 8px; font-size: 0.82rem;">
+            <span style="color: var(--text-muted);">Dataset:</span>
+            <strong style="color: var(--text-main);">{{ dataset_name if has_active_data else 'telecom_customer_validation_1500' }}</strong>
+            <a href="{{ url_for('upload.upload_page') }}" class="btn btn-secondary btn-sm" style="padding: 2px 8px; font-size: 0.75rem; margin-left: 4px;">
+                Upload
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="grid-2" style="grid-template-columns: 1.55fr 1fr; align-items: start; gap: 20px;">
+    <!-- Left Column: Interactive Chat Interface -->
+    <div class="chat-container" style="height: 680px; display: flex; flex-direction: column; background: var(--card-bg); border: 1px solid var(--border-color); border-radius: var(--radius); box-shadow: var(--shadow-sm); overflow: hidden;">
+        
+        <!-- Header bar -->
+        <div style="padding: 12px 18px; border-bottom: 1px solid var(--border-color); background: var(--bg-neutral); display: flex; justify-content: space-between; align-items: center;">
+            <div style="display: flex; align-items: center; gap: 8px; font-size: 0.85rem; font-weight: 600; color: var(--text-main);">
+                <i class="fas fa-chart-line" style="color: var(--primary);"></i> Decision Support Console
+            </div>
+            <div class="source-indicator" style="margin-bottom: 0;">Grounded ML Telemetry</div>
+        </div>
+
+        <!-- Messages Area -->
+        <div class="chat-messages" id="chatMessages" style="flex: 1; overflow-y: auto; padding: 20px; display: flex; flex-direction: column; gap: 16px; background: #FFFFFF;">
+            <div class="chat-msg bot">
+                <div class="chat-avatar bot"><i class="fas fa-robot"></i></div>
+                <div class="chat-bubble">
+                    <strong style="color: var(--text-main); display: block; margin-bottom: 6px;">Enterprise Retention Assistant Active</strong>
+                    {% if has_active_data %}
+                    Connected to active dataset: <strong>{{ dataset_name }}</strong>.<br><br>
+                    You can inquire about individual accounts (e.g. <em>"Why is 7590-VHVEG at risk?"</em>), simulate contract terms (<em>"What happens if we switch 7590-VHVEG to a 2-year contract?"</em>), inspect retention priority cohorts, evaluate portfolio MRR exposure, or review model calibration metrics.<br><br>
+                    {% else %}
+                    Connected to standard portfolio telemetry. Upload a dataset or ask analytical questions regarding churn drivers and risk segmentation.<br><br>
+                    {% endif %}
+                    <span style="font-size: 0.8rem; color: var(--text-muted);">Select a suggested inquiry on the right or enter a query below.</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Input Bar -->
+        <form class="chat-input-bar" onsubmit="submitUserQuery(event)" style="padding: 12px 16px; border-top: 1px solid var(--border-color); background: var(--bg-neutral); display: flex; gap: 8px;">
+            <input type="text" id="userInput" class="chat-input" placeholder="Ask about customers, churn risk, SHAP drivers, cohorts, or simulations..." autocomplete="off" style="flex: 1; padding: 9px 14px; border: 1px solid var(--border-color); border-radius: var(--radius-sm); font-size: 0.88rem; background: #FFFFFF;">
+            <button type="submit" class="btn btn-primary" id="btnSend">
+                <i class="fas fa-paper-plane"></i> Send
+            </button>
+        </form>
+    </div>
+
+    <!-- Right Column: Suggested Questions & System Architecture -->
+    <div style="display: flex; flex-direction: column; gap: 16px;">
+        
+        <!-- Suggested Questions Card -->
+        <div class="card">
+            <div class="card-header">
+                <h3><i class="fas fa-compass" style="color: var(--primary);"></i> Suggested Inquiries</h3>
+                <span class="badge badge-neutral">Quick Queries</span>
+            </div>
+            
+            <div style="display: flex; flex-direction: column; gap: 6px;">
+                <button class="btn btn-secondary btn-sm" style="text-align: left; justify-content: flex-start; padding: 8px 12px; font-weight: 500; font-size: 0.82rem;" onclick="askQuickPrompt('If I could focus on only one customer segment for retention, which characteristics should I target?')">
+                    <i class="fas fa-bullseye" style="color: var(--primary); width: 14px;"></i> "Which customer segment should we prioritize?"
+                </button>
+                <button class="btn btn-secondary btn-sm" style="text-align: left; justify-content: flex-start; padding: 8px 12px; font-weight: 500; font-size: 0.82rem;" onclick="askQuickPrompt('Tell me about customer 7590-VHVEG and why they are at risk')">
+                    <i class="fas fa-user-shield" style="color: var(--primary); width: 14px;"></i> "Why is 7590-VHVEG at risk?"
+                </button>
+                <button class="btn btn-secondary btn-sm" style="text-align: left; justify-content: flex-start; padding: 8px 12px; font-weight: 500; font-size: 0.82rem;" onclick="askQuickPrompt('What happens if customer 7590-VHVEG switches to a Two-year contract?')">
+                    <i class="fas fa-sliders" style="color: var(--primary); width: 14px;"></i> "What happens if we change the contract?"
+                </button>
+                <button class="btn btn-secondary btn-sm" style="text-align: left; justify-content: flex-start; padding: 8px 12px; font-weight: 500; font-size: 0.82rem;" onclick="askQuickPrompt('Which payment method has the highest predicted risk and why?')">
+                    <i class="fas fa-credit-card" style="color: var(--primary); width: 14px;"></i> "Which payment method has highest predicted risk?"
+                </button>
+                <button class="btn btn-secondary btn-sm" style="text-align: left; justify-content: flex-start; padding: 8px 12px; font-weight: 500; font-size: 0.82rem;" onclick="askQuickPrompt('Show the highest-risk customers')">
+                    <i class="fas fa-exclamation-triangle" style="color: var(--primary); width: 14px;"></i> "Show the highest-risk customers"
+                </button>
+                <button class="btn btn-secondary btn-sm" style="text-align: left; justify-content: flex-start; padding: 8px 12px; font-weight: 500; font-size: 0.82rem;" onclick="askQuickPrompt('Compare churn risk by contract type')">
+                    <i class="fas fa-chart-column" style="color: var(--primary); width: 14px;"></i> "Compare churn risk by contract type"
+                </button>
+                <button class="btn btn-secondary btn-sm" style="text-align: left; justify-content: flex-start; padding: 8px 12px; font-weight: 500; font-size: 0.82rem;" onclick="askQuickPrompt('What is our total revenue exposure and monthly charges at risk?')">
+                    <i class="fas fa-dollar-sign" style="color: var(--primary); width: 14px;"></i> "What is our total revenue exposure?"
+                </button>
+            </div>
+        </div>
+
+        <!-- Grounded Telemetry Architecture -->
+        <div class="card">
+            <div class="card-header">
+                <h3><i class="fas fa-shield-alt" style="color: var(--primary);"></i> Verified Analytical RAG</h3>
+            </div>
+            
+            <p style="font-size: 0.82rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 12px;">
+                Queries synthesize factual SQL customer records, calibrated TreeSHAP feature attributions, and counterfactual simulation results.
+            </p>
+
+            <div style="display: flex; flex-direction: column; gap: 8px; font-size: 0.78rem;">
+                <div style="display: flex; align-items: center; gap: 8px; color: var(--text-main); background: var(--bg-neutral); padding: 6px 10px; border-radius: 4px; border: 1px solid var(--border-color);">
+                    <i class="fas fa-check" style="color: var(--success);"></i>
+                    <span><strong>Source Grounding:</strong> Strict attribution to verified ML pipeline</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px; color: var(--text-main); background: var(--bg-neutral); padding: 6px 10px; border-radius: 4px; border: 1px solid var(--border-color);">
+                    <i class="fas fa-check" style="color: var(--success);"></i>
+                    <span><strong>Calibrated Attributions:</strong> TreeSHAP local explainability</span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 8px; color: var(--text-main); background: var(--bg-neutral); padding: 6px 10px; border-radius: 4px; border: 1px solid var(--border-color);">
+                    <i class="fas fa-check" style="color: var(--success);"></i>
+                    <span><strong>Real-time Simulator:</strong> Deterministic what-if predictions</span>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- Settings Modal -->
+<div id="settingsModal" style="display: none; position: fixed; inset: 0; background: rgba(15, 23, 42, 0.4); backdrop-filter: blur(2px); z-index: 9999; align-items: center; justify-content: center;">
+    <div style="background: #FFFFFF; border: 1px solid var(--border-color); border-radius: var(--radius); width: 90%; max-width: 500px; padding: 24px; box-shadow: var(--shadow-lg);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; border-bottom: 1px solid var(--border-color); padding-bottom: 12px;">
+            <h3 style="margin: 0; font-size: 1.1rem; display: flex; align-items: center; gap: 8px;">
+                <i class="fas fa-key" style="color: var(--primary);"></i> AI Model Provider Settings
+            </h3>
+            <button onclick="closeSettingsModal()" style="background: transparent; border: none; color: var(--text-muted); cursor: pointer; font-size: 1.2rem;">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 16px;">
+            Configure your AI provider to enable natural language decision support grounded in dataset telemetry.
+        </p>
+
+        <div class="form-group" style="margin-bottom: 14px;">
+            <label class="form-label">LLM Provider</label>
+            <select id="settingProvider" class="form-control" onchange="updateProviderHint()">
+                <option value="gemini" {% if active_provider == 'gemini' %}selected{% endif %}>Google Gemini (Recommended)</option>
+                <option value="openai" {% if active_provider == 'openai' %}selected{% endif %}>OpenAI (GPT-4o-mini)</option>
+                <option value="groq" {% if active_provider == 'groq' %}selected{% endif %}>Groq (Llama 3.3 70B)</option>
+                <option value="local_semantic" {% if active_provider == 'local_semantic' %}selected{% endif %}>Local Semantic Engine (No API Key)</option>
+            </select>
+        </div>
+
+        <div id="apiKeyGroup" class="form-group" style="margin-bottom: 14px;">
+            <label class="form-label">API Key</label>
+            <input type="password" id="settingApiKey" class="form-control" placeholder="Paste API key here (e.g. AIzaSy... or sk-...)">
+            <div id="providerHint" style="font-size: 0.75rem; color: var(--text-muted); margin-top: 4px;">
+                Get a free Google Gemini key at <a href="https://aistudio.google.com/app/apikey" target="_blank" style="color: var(--primary); text-decoration: underline;">Google AI Studio</a>.
+            </div>
+        </div>
+
+        <div id="testKeyFeedback" style="display: none; padding: 8px 12px; border-radius: 6px; font-size: 0.82rem; margin-bottom: 14px;"></div>
+
+        <div style="display: flex; justify-content: flex-end; gap: 8px; border-top: 1px solid var(--border-color); padding-top: 14px;">
+            <button onclick="clearCustomKey()" class="btn btn-secondary btn-sm">
+                Reset to Default
+            </button>
+            <button onclick="testAndSaveKey()" class="btn btn-primary btn-sm" id="btnTestKey">
+                <i class="fas fa-check"></i> Test & Save Key
+            </button>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+    let chatHistory = [];
+
+    function openSettingsModal() {
+        document.getElementById('settingsModal').style.display = 'flex';
+    }
+
+    function closeSettingsModal() {
+        document.getElementById('settingsModal').style.display = 'none';
+    }
+
+    function updateProviderHint() {
+        const provider = document.getElementById('settingProvider').value;
+        const keyGroup = document.getElementById('apiKeyGroup');
+        const hint = document.getElementById('providerHint');
+
+        if (provider === 'local_semantic') {
+            keyGroup.style.display = 'none';
+        } else {
+            keyGroup.style.display = 'block';
+            if (provider === 'gemini') {
+                hint.innerHTML = 'Get a free Google Gemini key at <a href="https://aistudio.google.com/app/apikey" target="_blank" style="color: var(--primary); text-decoration: underline;">Google AI Studio</a>.';
+            } else if (provider === 'openai') {
+                hint.innerHTML = 'Get an OpenAI API key at <a href="https://platform.openai.com/api-keys" target="_blank" style="color: var(--primary); text-decoration: underline;">OpenAI Platform</a>.';
+            } else if (provider === 'groq') {
+                hint.innerHTML = 'Get a free fast Groq key at <a href="https://console.groq.com/keys" target="_blank" style="color: var(--primary); text-decoration: underline;">Groq Console</a>.';
+            }
+        }
+    }
+
+    async function testAndSaveKey() {
+        const provider = document.getElementById('settingProvider').value;
+        const apiKey = document.getElementById('settingApiKey').value.trim();
+        const feedback = document.getElementById('testKeyFeedback');
+        const btn = document.getElementById('btnTestKey');
+
+        if (provider === 'local_semantic') {
+            await clearCustomKey();
+            closeSettingsModal();
+            return;
+        }
+
+        if (!apiKey) {
+            feedback.style.display = 'block';
+            feedback.style.background = 'var(--danger-light)';
+            feedback.style.border = '1px solid #FECACA';
+            feedback.style.color = 'var(--danger)';
+            feedback.innerHTML = '<i class="fas fa-exclamation-circle"></i> Please enter an API key.';
+            return;
+        }
+
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Validating...';
+        feedback.style.display = 'none';
+
+        try {
+            const resp = await fetch("{{ url_for('assistant.api_test_key') }}", {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ provider: provider, api_key: apiKey })
+            });
+            const data = await resp.json();
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-check"></i> Test & Save Key';
+
+            feedback.style.display = 'block';
+            if (data.success) {
+                feedback.style.background = 'var(--success-light)';
+                feedback.style.border = '1px solid #A7F3D0';
+                feedback.style.color = 'var(--success)';
+                feedback.innerHTML = `<i class="fas fa-check"></i> Connected successfully to ${data.provider.toUpperCase()} (${data.model})!`;
+                
+                document.getElementById('activeModelLabel').innerText = `${data.provider.toUpperCase()} (${data.model})`;
+                setTimeout(() => closeSettingsModal(), 1200);
+            } else {
+                feedback.style.background = 'var(--danger-light)';
+                feedback.style.border = '1px solid #FECACA';
+                feedback.style.color = 'var(--danger)';
+                feedback.innerHTML = `<i class="fas fa-exclamation-triangle"></i> ${data.error || 'Connection failed'}`;
+            }
+        } catch (err) {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-check"></i> Test & Save Key';
+            feedback.style.display = 'block';
+            feedback.style.background = 'var(--danger-light)';
+            feedback.style.border = '1px solid #FECACA';
+            feedback.style.color = 'var(--danger)';
+            feedback.innerHTML = '<i class="fas fa-exclamation-triangle"></i> Network error connecting to server.';
+        }
+    }
+
+    async function clearCustomKey() {
+        await fetch("{{ url_for('assistant.api_clear_key') }}", { method: 'POST' });
+        document.getElementById('settingApiKey').value = '';
+        document.getElementById('activeModelLabel').innerText = 'Semantic Analytics Engine';
+        closeSettingsModal();
+    }
+
+    async function submitUserQuery(e) {
+        if (e) e.preventDefault();
+        const input = document.getElementById('userInput');
+        const query = input.value.trim();
+        if (!query) return;
+
+        input.value = '';
+        appendMessage('user', query);
+        chatHistory.push({ role: 'user', content: query });
+
+        const sendBtn = document.getElementById('btnSend');
+        sendBtn.disabled = true;
+        sendBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Analyzing...';
+
+        try {
+            const resp = await fetch("{{ url_for('assistant.api_query_assistant') }}", {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    query: query,
+                    company_id: '{{ session.get("company_id", "APEX-GLOBAL") }}',
+                    chat_history: chatHistory
+                })
+            });
+            const data = await resp.json();
+            sendBtn.disabled = false;
+            sendBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Send';
+
+            if (data.success) {
+                appendMessage('bot', data.response);
+                chatHistory.push({ role: 'assistant', content: data.response });
+            } else {
+                appendMessage('bot', "⚠️ Error processing request: " + (data.error || "Unknown error"));
+            }
+        } catch (err) {
+            sendBtn.disabled = false;
+            sendBtn.innerHTML = '<i class="fas fa-paper-plane"></i> Send';
+            appendMessage('bot', "⚠️ Communication error: " + err);
+        }
+    }
+
+    function askQuickPrompt(text) {
+        document.getElementById('userInput').value = text;
+        submitUserQuery();
+    }
+
+    function formatMarkdownText(rawText) {
+        if (!rawText) return "";
+
+        const lines = rawText.split('\n');
+        let formattedLines = [];
+        let inTable = false;
+        let tableRows = [];
+
+        for (let i = 0; i < lines.length; i++) {
+            const line = lines[i].trim();
+            if (line.startsWith('|') && line.endsWith('|')) {
+                if (!inTable) {
+                    inTable = true;
+                    tableRows = [];
+                }
+                tableRows.push(line);
+            } else {
+                if (inTable) {
+                    formattedLines.push(renderTable(tableRows));
+                    inTable = false;
+                    tableRows = [];
+                }
+                formattedLines.push(lines[i]);
+            }
+        }
+        if (inTable) {
+            formattedLines.push(renderTable(tableRows));
+        }
+
+        let content = formattedLines.join('\n');
+
+        // Headers
+        content = content.replace(/^### (.*$)/gim, '<h3 style="margin-top: 10px; margin-bottom: 4px; color: var(--text-main); font-size: 0.95rem; font-weight: 700;">$1</h3>');
+        content = content.replace(/^#### (.*$)/gim, '<h4 style="margin-top: 8px; margin-bottom: 4px; color: var(--primary); font-size: 0.9rem; font-weight: 600;">$1</h4>');
+        content = content.replace(/^## (.*$)/gim, '<h2 style="margin-top: 12px; margin-bottom: 6px; color: var(--text-main); font-size: 1.05rem; font-weight: 700;">$1</h2>');
+
+        // Bold & Italic
+        content = content.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+        content = content.replace(/\*(.*?)\*/g, '<em>$1</em>');
+
+        // Source indicators
+        content = content.replace(/<strong>Source:<\/strong>\s*(.*?)(<br>|\n|$)/gi, '<div class="source-indicator">Source: $1</div>');
+        content = content.replace(/\*\*Source:\*\*\s*(.*?)(<br>|\n|$)/gi, '<div class="source-indicator">Source: $1</div>');
+
+        // Inline Code / Badges
+        content = content.replace(/`([^`]+)`/g, '<code style="background: var(--bg-neutral); color: var(--text-main); border: 1px solid var(--border-color); padding: 1px 5px; border-radius: 4px; font-size: 0.85em; font-family: monospace;">$1</code>');
+
+        // Bullet points
+        content = content.replace(/^[•\*\-] (.*$)/gim, '<div style="margin-left: 10px; margin-bottom: 4px;">• $1</div>');
+
+        // Numbered items
+        content = content.replace(/^(\d+)\. (.*$)/gim, '<div style="margin-left: 10px; margin-bottom: 4px;"><strong>$1.</strong> $2</div>');
+
+        // Links
+        content = content.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2" target="_blank" style="color: var(--primary); text-decoration: underline; font-weight: 500;">$1</a>');
+
+        // Line breaks
+        content = content.replace(/\n\n/g, '<div style="height: 6px;"></div>');
+        content = content.replace(/\n/g, '<br>');
+
+        return content;
+    }
+
+    function renderTable(rows) {
+        if (rows.length < 2) return rows.join('<br>');
+        let html = '<div style="overflow-x: auto; margin: 8px 0;"><table class="data-table" style="width: 100%; font-size: 0.8rem;">';
+        
+        let headerParsed = false;
+        for (let r = 0; r < rows.length; r++) {
+            const rowText = rows[r];
+            const cells = rowText.split('|').slice(1, -1).map(c => c.trim());
+            
+            if (cells.some(c => c.startsWith('---') || c.startsWith(':---'))) {
+                continue;
+            }
+
+            if (!headerParsed) {
+                html += '<thead><tr>';
+                cells.forEach(c => {
+                    html += `<th>${c}</th>`;
+                });
+                html += '</tr></thead><tbody>';
+                headerParsed = true;
+            } else {
+                html += '<tr>';
+                cells.forEach(c => {
+                    html += `<td>${c}</td>`;
+                });
+                html += '</tr>';
+            }
+        }
+        html += '</tbody></table></div>';
+        return html;
+    }
+
+    function appendMessage(sender, text) {
+        const chat = document.getElementById('chatMessages');
+        const msgDiv = document.createElement('div');
+        msgDiv.className = `chat-msg ${sender}`;
+
+        const avatar = document.createElement('div');
+        avatar.className = `chat-avatar ${sender}`;
+        avatar.innerHTML = sender === 'bot' ? '<i class="fas fa-robot"></i>' : '<i class="fas fa-user"></i>';
+
+        const bubble = document.createElement('div');
+        bubble.className = 'chat-bubble';
+        bubble.style.maxWidth = '90%';
+        
+        if (sender === 'bot') {
+            bubble.innerHTML = formatMarkdownText(text);
+        } else {
+            bubble.textContent = text;
+        }
+
+        msgDiv.appendChild(avatar);
+        msgDiv.appendChild(bubble);
+        chat.appendChild(msgDiv);
+        chat.scrollTop = chat.scrollHeight;
+    }
+</script>
+{% endblock %}

@@ -1,0 +1,189 @@
+{% extends "base.html" %}
+
+{% block title %}Hypothetical Scenario Simulator | ChurnIntel AI{% endblock %}
+
+{% block content %}
+<div class="page-header">
+    <div>
+        <h1>Hypothetical Scenario Simulator</h1>
+        <p class="subtitle">Evaluate model predictions for hypothetical subscriber parameters and test retention intervention scenarios.</p>
+    </div>
+    <div class="header-actions">
+        <span class="source-indicator" style="margin-bottom: 0;">Model-Based Counterfactual Simulation</span>
+    </div>
+</div>
+
+<div class="grid-2" style="gap: 20px;">
+    <!-- Left Column: Input Form -->
+    <div class="card">
+        <div class="card-header">
+            <h3><i class="fas fa-sliders-h" style="color: var(--primary);"></i> Scenario Parameters</h3>
+            <span class="badge badge-neutral">Input Controls</span>
+        </div>
+
+        <form method="POST" action="{{ url_for('manual_predict.manual_prediction_page') }}">
+            <!-- Model Engine Selection -->
+            <div class="form-group" style="background: var(--bg-neutral); padding: 12px; border-radius: var(--radius-sm); border: 1px solid var(--border-color); margin-bottom: 16px;">
+                <label class="form-label" style="color: var(--text-main); font-weight: 600;">ML Prediction Engine</label>
+                <select name="model_choice" class="form-control">
+                    <option value="champion_ensemble" {% if result and result.model_choice == 'champion_ensemble' %}selected{% endif %}>Champion Stacking Ensemble (Recommended)</option>
+                    <option value="catboost" {% if result and result.model_choice == 'catboost' %}selected{% endif %}>CatBoost Classifier</option>
+                    <option value="xgboost" {% if result and result.model_choice == 'xgboost' %}selected{% endif %}>XGBoost Classifier</option>
+                    <option value="gradient_boosting" {% if result and result.model_choice == 'gradient_boosting' %}selected{% endif %}>Gradient Boosting Machine</option>
+                    <option value="random_forest" {% if result and result.model_choice == 'random_forest' %}selected{% endif %}>Random Forest</option>
+                    <option value="logistic_regression" {% if result and result.model_choice == 'logistic_regression' %}selected{% endif %}>Logistic Regression Baseline</option>
+                </select>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+                <div class="form-group">
+                    <label class="form-label">Contract Term</label>
+                    <select name="contract" class="form-control">
+                        <option {% if result and result.inputs.contract == 'Month-to-month' %}selected{% endif %}>Month-to-month</option>
+                        <option {% if result and result.inputs.contract == 'One year' %}selected{% endif %}>One year</option>
+                        <option {% if result and result.inputs.contract == 'Two year' %}selected{% endif %}>Two year</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Payment Method</label>
+                    <select name="payment" class="form-control">
+                        <option {% if result and result.inputs.payment_method == 'Electronic check' %}selected{% endif %}>Electronic check</option>
+                        <option {% if result and result.inputs.payment_method == 'Credit card (automatic)' %}selected{% endif %}>Credit card (automatic)</option>
+                        <option {% if result and result.inputs.payment_method == 'Bank transfer (automatic)' %}selected{% endif %}>Bank transfer (automatic)</option>
+                        <option {% if result and result.inputs.payment_method == 'Mailed check' %}selected{% endif %}>Mailed check</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Internet Service</label>
+                    <select name="internet" class="form-control">
+                        <option {% if result and result.inputs.internet_service == 'Fiber optic' %}selected{% endif %}>Fiber optic</option>
+                        <option {% if result and result.inputs.internet_service == 'DSL' %}selected{% endif %}>DSL</option>
+                        <option {% if result and result.inputs.internet_service == 'No' %}selected{% endif %}>No</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Tech Support</label>
+                    <select name="support" class="form-control">
+                        <option {% if result and result.inputs.tech_support == 'No' %}selected{% endif %}>No</option>
+                        <option {% if result and result.inputs.tech_support == 'Yes' %}selected{% endif %}>Yes</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Online Security</label>
+                    <select name="security" class="form-control">
+                        <option {% if result and result.inputs.online_security == 'No' %}selected{% endif %}>No</option>
+                        <option {% if result and result.inputs.online_security == 'Yes' %}selected{% endif %}>Yes</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Paperless Billing</label>
+                    <select name="paperless" class="form-control">
+                        <option {% if result and result.inputs.paperless_billing == 'Yes' %}selected{% endif %}>Yes</option>
+                        <option {% if result and result.inputs.paperless_billing == 'No' %}selected{% endif %}>No</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Tenure (Months)</label>
+                    <input type="number" name="tenure" min="0" max="72" value="{{ result.inputs.tenure if result else '4' }}" class="form-control" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Monthly Charges ($)</label>
+                    <input type="number" step="0.5" name="monthly" min="0" value="{{ result.inputs.monthly_charges if result else '85.50' }}" class="form-control" required>
+                </div>
+
+                <div class="form-group" style="grid-column: span 2;">
+                    <label class="form-label">Total Lifetime Spend ($)</label>
+                    <input type="number" step="0.5" name="total" min="0" value="{{ result.inputs.total_charges if result else '342.00' }}" class="form-control" required>
+                </div>
+            </div>
+
+            <button type="submit" class="btn btn-primary" style="width: 100%; justify-content: center; margin-top: 14px;">
+                <i class="fas fa-play"></i> Run Simulation Analysis
+            </button>
+        </form>
+    </div>
+
+    <!-- Right Column: Results & AI Strategy -->
+    <div>
+        {% if result %}
+        <div class="card">
+            <div class="card-header">
+                <h3><i class="fas fa-chart-line" style="color: var(--primary);"></i> Simulation Outcome</h3>
+                <span class="badge {% if result.prediction.risk_level == 'HIGH' %}badge-high{% elif result.prediction.risk_level == 'MEDIUM' %}badge-medium{% else %}badge-low{% endif %}">
+                    <span class="badge-dot"></span> {{ result.prediction.risk_level }} RISK
+                </span>
+            </div>
+
+            <div style="margin-bottom: 16px;">
+                <div style="font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--text-muted); margin-bottom: 4px;">
+                    Simulated Churn Probability
+                </div>
+                <div style="display: flex; align-items: baseline; justify-content: space-between;">
+                    <span style="font-size: 2rem; font-weight: 800; color: {% if result.prediction.churn_percentage >= 48 %}var(--danger){% elif result.prediction.churn_percentage >= 25 %}var(--warning){% else %}var(--success){% endif %};">
+                        {{ result.prediction.churn_percentage }}%
+                    </span>
+                    <span style="font-size: 0.82rem; color: var(--text-muted);">
+                        Model: <strong style="color: var(--text-main);">{{ result.model_choice|replace('_', ' ')|title }}</strong>
+                    </span>
+                </div>
+                <div style="height: 8px; background: var(--bg-neutral); border-radius: 4px; overflow: hidden; margin-top: 8px;">
+                    <div style="height: 100%; width: {{ result.prediction.churn_percentage }}%; background: {% if result.prediction.churn_percentage >= 48 %}var(--danger){% elif result.prediction.churn_percentage >= 25 %}var(--warning){% else %}var(--success){% endif %}; border-radius: 4px;"></div>
+                </div>
+            </div>
+
+            {% if ai_strategy %}
+            <div style="background: var(--bg-neutral); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 14px; margin-bottom: 16px;">
+                <div style="font-size: 0.85rem; font-weight: 700; color: var(--text-main); margin-bottom: 6px;">
+                    Strategic Evaluation
+                </div>
+                <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.5; margin-bottom: 8px;">{{ ai_strategy.summary }}</p>
+                <div style="font-size: 0.82rem; color: var(--text-main);">
+                    <strong>Action Recommendation:</strong> <span style="color: var(--text-muted);">{{ ai_strategy.recommendation }}</span>
+                </div>
+            </div>
+            {% endif %}
+
+            {% if shap_factors %}
+            <div>
+                <h4 style="font-size: 0.85rem; font-weight: 700; color: var(--text-main); margin-bottom: 10px;">
+                    Top Feature Attributions (TreeSHAP)
+                </h4>
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                    {% for f in shap_factors[:5] %}
+                    <div style="background: var(--bg-neutral); border: 1px solid var(--border-color); border-radius: 6px; padding: 8px 12px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 0.82rem; margin-bottom: 4px;">
+                            <span style="font-weight: 500; color: var(--text-main);">{{ f.feature_name }}</span>
+                            <span style="font-weight: 700; font-family: monospace; font-size: 0.85rem; {% if f.impact_direction == 'INCREASES_CHURN' %}color: var(--danger);{% else %}color: var(--success);{% endif %}">
+                                {% if f.impact_direction == 'INCREASES_CHURN' %}+{{ "%.3f"|format(f.shap_value) }} ↑{% else %}{{ "%.3f"|format(f.shap_value) }} ↓{% endif %}
+                            </span>
+                        </div>
+                        <div style="height: 4px; background: var(--border-color); border-radius: 2px; overflow: hidden;">
+                            <div style="height: 100%; width: {{ [f.abs_shap * 200, 100]|min }}%; background: {% if f.impact_direction == 'INCREASES_CHURN' %}var(--danger){% else %}var(--success){% endif %}; border-radius: 2px;"></div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        {% else %}
+        <div class="card" style="text-align: center; padding: 48px 24px;">
+            <div style="width: 48px; height: 48px; border-radius: 50%; background: var(--bg-neutral); border: 1px solid var(--border-color); display: flex; align-items: center; justify-content: center; margin: 0 auto 14px auto; color: var(--text-muted); font-size: 1.25rem;">
+                <i class="fas fa-sliders-h"></i>
+            </div>
+            <h3 style="font-size: 1.05rem; margin-bottom: 6px; color: var(--text-main);">Simulation Ready</h3>
+            <p style="font-size: 0.85rem; color: var(--text-muted); max-width: 420px; margin: 0 auto 16px auto; line-height: 1.5;">
+                Configure customer subscription terms and service options on the left, then click "Run Simulation Analysis" to generate calibrated ML probabilities and feature attributions.
+            </p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

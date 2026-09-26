@@ -1,6 +1,36 @@
+# Python & Virtual Environments
 .venv/
 venv/
+ENV/
+env/
 __pycache__/
-*.pyc
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Flask / System
+instance/
+.webassets-cache
 .pytest_cache/
+.coverage
+htmlcov/
+dist/
+build/
+*.egg-info/
+
+# Scratch & IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+scratch/
+.system_generated/
+catboost_info/
+uploads/cache_*
+uploads/temp_*
+
+
+# OS
 .DS_Store
+Thumbs.db
