@@ -2,179 +2,179 @@
   "models": [
     {
       "model_name": "Champion Ensemble",
-      "accuracy": 0.7489,
-      "precision": 0.6432,
-      "recall": 0.7631,
-      "f1_score": 0.698,
-      "roc_auc": 0.831,
-      "pr_auc": 0.7424,
-      "brier_score": 0.1659,
+      "accuracy": 0.7371,
+      "precision": 0.6222,
+      "recall": 0.7853,
+      "f1_score": 0.6943,
+      "roc_auc": 0.8312,
+      "pr_auc": 0.7422,
+      "brier_score": 0.1657,
       "confusion_matrix": [
         [
-          1197,
-          420
+          1144,
+          473
         ],
         [
-          235,
-          757
+          213,
+          779
         ]
       ],
-      "optimal_threshold": 0.48
+      "optimal_threshold": 0.45
     },
     {
       "model_name": "CatBoost",
-      "accuracy": 0.7359,
-      "precision": 0.6168,
-      "recall": 0.8065,
-      "f1_score": 0.699,
-      "roc_auc": 0.8312,
-      "pr_auc": 0.7421,
-      "brier_score": 0.168,
+      "accuracy": 0.7325,
+      "precision": 0.6122,
+      "recall": 0.8085,
+      "f1_score": 0.6968,
+      "roc_auc": 0.8311,
+      "pr_auc": 0.7402,
+      "brier_score": 0.1679,
       "confusion_matrix": [
         [
-          1120,
-          497
+          1109,
+          508
         ],
         [
-          192,
-          800
+          190,
+          802
         ]
       ],
       "optimal_threshold": 0.45
     },
     {
       "model_name": "XGBoost",
-      "accuracy": 0.7432,
-      "precision": 0.6328,
-      "recall": 0.7732,
-      "f1_score": 0.696,
-      "roc_auc": 0.8304,
-      "pr_auc": 0.741,
-      "brier_score": 0.1685,
+      "accuracy": 0.7305,
+      "precision": 0.6099,
+      "recall": 0.8085,
+      "f1_score": 0.6953,
+      "roc_auc": 0.831,
+      "pr_auc": 0.742,
+      "brier_score": 0.168,
       "confusion_matrix": [
         [
-          1172,
-          445
+          1104,
+          513
         ],
         [
-          225,
-          767
+          190,
+          802
         ]
       ],
-      "optimal_threshold": 0.49
+      "optimal_threshold": 0.44
     },
     {
       "model_name": "Gradient Boosting",
-      "accuracy": 0.7233,
-      "precision": 0.5968,
-      "recall": 0.8387,
-      "f1_score": 0.6974,
+      "accuracy": 0.724,
+      "precision": 0.6003,
+      "recall": 0.8206,
+      "f1_score": 0.6934,
       "roc_auc": 0.8283,
-      "pr_auc": 0.7332,
-      "brier_score": 0.1632,
+      "pr_auc": 0.7388,
+      "brier_score": 0.1633,
       "confusion_matrix": [
         [
-          1055,
-          562
+          1075,
+          542
         ],
         [
-          160,
-          832
+          178,
+          814
         ]
       ],
-      "optimal_threshold": 0.31
+      "optimal_threshold": 0.32
     },
     {
       "model_name": "Random Forest",
-      "accuracy": 0.7256,
-      "precision": 0.6024,
-      "recall": 0.8185,
-      "f1_score": 0.694,
-      "roc_auc": 0.8237,
-      "pr_auc": 0.733,
-      "brier_score": 0.1684,
+      "accuracy": 0.7053,
+      "precision": 0.5745,
+      "recall": 0.8669,
+      "f1_score": 0.691,
+      "roc_auc": 0.8244,
+      "pr_auc": 0.7334,
+      "brier_score": 0.1682,
       "confusion_matrix": [
         [
-          1081,
-          536
+          980,
+          637
         ],
         [
-          180,
-          812
+          132,
+          860
         ]
       ],
-      "optimal_threshold": 0.41
+      "optimal_threshold": 0.35
     },
     {
       "model_name": "Logistic Regression (Baseline)",
-      "accuracy": 0.7298,
-      "precision": 0.6117,
-      "recall": 0.7923,
-      "f1_score": 0.6904,
-      "roc_auc": 0.8192,
-      "pr_auc": 0.7175,
-      "brier_score": 0.1748,
+      "accuracy": 0.7328,
+      "precision": 0.6187,
+      "recall": 0.7752,
+      "f1_score": 0.6881,
+      "roc_auc": 0.819,
+      "pr_auc": 0.719,
+      "brier_score": 0.1749,
       "confusion_matrix": [
         [
-          1118,
-          499
+          1143,
+          474
         ],
         [
-          206,
-          786
+          223,
+          769
         ]
       ],
-      "optimal_threshold": 0.48
+      "optimal_threshold": 0.5
     }
   ],
   "feature_importances": [
     {
       "feature": "HighRiskProfileScore",
-      "importance": 0.1846
+      "importance": 0.1372
     },
     {
       "feature": "MonthlyCharges",
-      "importance": 0.1088
-    },
-    {
-      "feature": "MonthlyCharges_to_Tenure",
-      "importance": 0.085
-    },
-    {
-      "feature": "Is_TwoYear",
-      "importance": 0.0773
+      "importance": 0.1145
     },
     {
       "feature": "Is_MonthToMonth",
-      "importance": 0.0497
+      "importance": 0.1107
+    },
+    {
+      "feature": "MonthlyCharges_to_Tenure",
+      "importance": 0.0933
+    },
+    {
+      "feature": "Is_TwoYear",
+      "importance": 0.0613
     },
     {
       "feature": "ChargeDiscrepancy",
-      "importance": 0.0438
+      "importance": 0.0447
     },
     {
       "feature": "TotalCharges",
-      "importance": 0.0414
-    },
-    {
-      "feature": "tenure",
-      "importance": 0.0389
-    },
-    {
-      "feature": "ActiveServicesCount",
-      "importance": 0.035
+      "importance": 0.0398
     },
     {
       "feature": "Is_OneYear",
-      "importance": 0.0333
+      "importance": 0.0359
     },
     {
-      "feature": "OnlineSecurity_Yes",
-      "importance": 0.0256
+      "feature": "ActiveServicesCount",
+      "importance": 0.0358
+    },
+    {
+      "feature": "tenure",
+      "importance": 0.0356
     },
     {
       "feature": "PhoneService",
       "importance": 0.0232
+    },
+    {
+      "feature": "SeniorCitizen",
+      "importance": 0.0203
     }
   ],
   "dataset_stats": {

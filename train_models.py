@@ -206,7 +206,7 @@ def train_and_benchmark():
         for feat, imp in sorted(zip(CANONICAL_FEATURES, avg_imp), key=lambda x: x[1], reverse=True)
     ]
     
-    # Save Model Bundle
+    # Save Model Bundle to both locations
     bundle = {
         'models': {
             'champion_ensemble': ensemble_model,
@@ -222,10 +222,17 @@ def train_and_benchmark():
         'optimal_thresholds': optimal_thresholds,
         'feature_importances': feature_importance_list
     }
-    joblib.dump(bundle, MODELS_BUNDLE_PATH)
-    print(f"\nSaved trained models bundle to {MODELS_BUNDLE_PATH}")
     
-    # Save Metrics JSON for UI visualization
+    os.makedirs(os.path.dirname(MODELS_BUNDLE_PATH) or ".", exist_ok=True)
+    joblib.dump(bundle, MODELS_BUNDLE_PATH)
+    
+    # Also save to ml/artifacts/
+    artifacts_dir = os.path.join("ml", "artifacts")
+    os.makedirs(artifacts_dir, exist_ok=True)
+    joblib.dump(bundle, os.path.join(artifacts_dir, "models_bundle.joblib"))
+    print(f"\nSaved trained models bundle to {MODELS_BUNDLE_PATH} and {artifacts_dir}/models_bundle.joblib")
+    
+    # Save Metrics JSON for UI visualization to both locations
     metrics_data = {
         'models': metrics_list,
         'feature_importances': feature_importance_list[:12], # top 12
@@ -235,7 +242,9 @@ def train_and_benchmark():
     }
     with open(METRICS_PATH, "w") as f:
         json.dump(metrics_data, f, indent=2)
-    print(f"Saved benchmarking metrics to {METRICS_PATH}")
+    with open(os.path.join(artifacts_dir, "model_metrics.json"), "w") as f:
+        json.dump(metrics_data, f, indent=2)
+    print(f"Saved benchmarking metrics to {METRICS_PATH} and {artifacts_dir}/model_metrics.json")
     print("Training pipeline completed successfully!")
 
 if __name__ == "__main__":
