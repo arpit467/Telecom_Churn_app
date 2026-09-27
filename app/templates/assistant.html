@@ -31,9 +31,9 @@
         <div style="background: var(--card-bg); border: 1px solid var(--border-color); border-radius: var(--radius); padding: 6px 12px; display: flex; align-items: center; gap: 8px; font-size: 0.82rem;">
             <span style="color: var(--text-muted);">Dataset:</span>
             <strong style="color: var(--text-main);">{{ dataset_name if has_active_data else 'telecom_customer_validation_1500' }}</strong>
-            <a href="{{ url_for('upload.upload_page') }}" class="btn btn-secondary btn-sm" style="padding: 2px 8px; font-size: 0.75rem; margin-left: 4px;">
+            <button type="button" onclick="openGlobalUploadModal()" class="btn btn-secondary btn-sm" style="padding: 2px 8px; font-size: 0.75rem; margin-left: 4px;">
                 Upload
-            </a>
+            </button>
         </div>
     </div>
 </div>

@@ -14,9 +14,9 @@
         </p>
 
         <div style="display: flex; justify-content: center; gap: 10px; flex-wrap: wrap;">
-            <a href="{{ url_for('upload.upload_page') }}" class="btn btn-primary">
+            <button type="button" onclick="openGlobalUploadModal()" class="btn btn-primary">
                 <i class="fas fa-file-arrow-up"></i> Upload Dataset (CSV/Excel)
-            </a>
+            </button>
             <a href="{{ url_for('upload.load_sample_dataset') }}" class="btn btn-secondary">
                 <i class="fas fa-play"></i> Load Demo Dataset
             </a>
